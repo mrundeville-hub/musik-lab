@@ -114,6 +114,53 @@ function buildCells(): Cell[] {
 
 const CELLS: Cell[] = buildCells()
 
+// ── pollen particles ──────────────────────────────────────────
+const MAX_PARTICLES = 60
+const POLLEN_GLYPHS = '·.:˚*'
+interface Particle {
+  x: number; y: number; vx: number; vy: number
+  life: number; max: number; ch: string; on: boolean
+}
+const PARTICLES: Particle[] = Array.from({ length: MAX_PARTICLES }, () => ({
+  x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 1, ch: '·', on: false,
+}))
+
+function emitPollen(x: number, y: number) {
+  const p = PARTICLES.find((q) => !q.on)
+  if (!p) return
+  p.on = true
+  p.x = x
+  p.y = y
+  p.vx = (Math.random() - 0.5) * 18
+  p.vy = 12 + Math.random() * 22
+  p.max = 0.8 + Math.random() * 0.6
+  p.life = p.max
+  p.ch = POLLEN_GLYPHS[Math.floor(Math.random() * POLLEN_GLYPHS.length)]
+}
+
+function drawParticles(ctx: CanvasRenderingContext2D, dt: number) {
+  ctx.save()
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = '10px ui-monospace, monospace'
+  for (const p of PARTICLES) {
+    if (!p.on) continue
+    p.life -= dt
+    if (p.life <= 0) { p.on = false; continue }
+    p.vy += 30 * dt // gravity
+    p.x += p.vx * dt
+    p.y += p.vy * dt
+    const a = p.life / p.max
+    ctx.globalAlpha = a * 0.7
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'
+    ctx.fillText(p.ch, p.x + 1, p.y + 1)
+    ctx.fillStyle = grey(0.5 + 0.3 * a)
+    ctx.fillText(p.ch, p.x, p.y)
+  }
+  ctx.globalAlpha = 1
+  ctx.restore()
+}
+
 // ── butterfly state ────────────────────────────────────────────
 interface Bfly {
   x: number; y: number
@@ -152,6 +199,10 @@ interface ProjCell {
 const PROJ: ProjCell[] = CELLS.map(() => ({ x: 0, y: 0, z: 0, ch: '', s: 1, d: 0.5, st: false, ph: 0 }))
 
 const FOCAL = 320 // perspective focal length (px)
+
+// updated by drawBfly each frame: outermost projected wing-tip positions
+const WING_TIP_L = { x: 0, y: 0 }
+const WING_TIP_R = { x: 0, y: 0 }
 
 function drawBfly(ctx: CanvasRenderingContext2D, b: Bfly) {
   // Wings fold up out of the body plane (true 3D flap, like a real butterfly).
@@ -198,6 +249,14 @@ function drawBfly(ctx: CanvasRenderingContext2D, b: Bfly) {
     p.st = cell.st
     p.d = cell.d
     p.ph = i
+  }
+
+  // find outermost projected cells = wing tips (for pollen emission)
+  let minX = Infinity, maxX = -Infinity
+  for (let i = 0; i < PROJ.length; i++) {
+    const p = PROJ[i]
+    if (p.x < minX) { minX = p.x; WING_TIP_L.x = p.x; WING_TIP_L.y = p.y }
+    if (p.x > maxX) { maxX = p.x; WING_TIP_R.x = p.x; WING_TIP_R.y = p.y }
   }
 
   // painter's order: far cells first so near wing overlaps body correctly
@@ -253,6 +312,7 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
   const nextBell = useRef(0)
   const nextSparkle = useRef(0)
   const wasPerched = useRef(false)
+  const prevFlap = useRef(0)
 
 
   useEffect(() => {
@@ -445,6 +505,15 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
     }
 
     drawBfly(ctx, b)
+
+    // emit pollen near the peak of each downstroke (when not perched)
+    const flapSin = Math.sin(b.wingPhase)
+    if (!b.perched && prevFlap.current <= 0.85 && flapSin > 0.85 && b.flapAmp > 0.5) {
+      emitPollen(WING_TIP_L.x, WING_TIP_L.y)
+      emitPollen(WING_TIP_R.x, WING_TIP_R.y)
+    }
+    prevFlap.current = flapSin
+    drawParticles(ctx, dt)
   }, paused)
 
   return (
