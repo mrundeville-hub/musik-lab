@@ -47,30 +47,46 @@ function gauss(dx: number, dy: number, sx: number, sy: number) {
   return Math.exp(-((dx * dx) / (sx * sx) + (dy * dy) / (sy * sy)))
 }
 
+// Tilted elliptical lobe: 1 at the centre, falling linearly to 0 at the rim
+// (dist=1), exactly 0 beyond. `rot` rotates the ellipse so its long (ry) axis
+// points along (sin rot, cos rot) — used to angle wings out from the body.
+function lobe(
+  nx: number, ny: number,
+  cx: number, cy: number, rx: number, ry: number, rot: number,
+) {
+  const u = nx - cx, v = ny - cy
+  const cs = Math.cos(rot), sn = Math.sin(rot)
+  const up = u * cs - v * sn
+  const vp = u * sn + v * cs
+  const dist = Math.hypot(up / rx, vp / ry)
+  return dist >= 1 ? 0 : 1 - dist
+}
+
 // Density field in normalized wing space.
 // nx ∈ [0,1] outward from body, ny ∈ [-1,1] (negative = up / forewing).
 function wingField(nx: number, ny: number) {
-  // two overlapping lobes: forewing (upper) + hindwing (lower)
-  const fore = gauss(nx - 0.52, ny + 0.48, 0.5, 0.42)
-  const hind = gauss(nx - 0.42, ny - 0.46, 0.46, 0.4)
+  // forewing: long axis up-and-out (pointed tip top-outer)
+  const fore = lobe(nx, ny, 0.44, -0.4, 0.27, 0.62, 2.5)
+  // hindwing: long axis down-and-out, a touch smaller
+  const hind = lobe(nx, ny, 0.46, 0.44, 0.3, 0.5, 0.64)
   const wing = Math.max(fore, hind)
   if (wing < THRESHOLD) return 0
 
-  let d = wing * 0.85
+  let d = 0.35 + 0.55 * wing
 
   // rim: a band near the silhouette boundary → crisp dense edge
-  if (wing < THRESHOLD + 0.13) d += 0.4
+  if (wing < 0.18) d += 0.35
 
   // veins: rays from the wing root, density spikes along each line
   const ang = Math.atan2(ny, nx - 0.06)
   const rad = Math.hypot(nx - 0.06, ny)
   for (const v of [-0.9, -0.45, 0.2, 0.7]) {
-    if (rad > 0.15 && Math.abs(ang - v) < 0.08) d += 0.3
+    if (rad > 0.15 && Math.abs(ang - v) < 0.07) d += 0.28
   }
 
   // eyespots: two bright density peaks per wing
-  d += 0.6 * gauss(nx - 0.62, ny + 0.46, 0.12, 0.12) // forewing eye
-  d += 0.5 * gauss(nx - 0.5, ny - 0.46, 0.12, 0.12) // hindwing eye
+  d += 0.6 * gauss(nx - 0.6, ny + 0.42, 0.11, 0.11) // forewing eye
+  d += 0.5 * gauss(nx - 0.48, ny - 0.46, 0.11, 0.11) // hindwing eye
 
   return clamp01(d)
 }
@@ -204,7 +220,7 @@ const FOCAL = 320 // perspective focal length (px)
 const WING_TIP_L = { x: 0, y: 0 }
 const WING_TIP_R = { x: 0, y: 0 }
 
-function drawBfly(ctx: CanvasRenderingContext2D, b: Bfly) {
+function drawBfly(ctx: CanvasRenderingContext2D, b: Bfly, t: number) {
   // Wings fold up out of the body plane (true 3D flap, like a real butterfly).
   // Non-sinusoidal: downstroke sharper than upstroke; amplitude eased by state.
   const shaped = b.wingPhase + 0.4 * Math.sin(b.wingPhase)
@@ -281,8 +297,9 @@ function drawBfly(ctx: CanvasRenderingContext2D, b: Bfly) {
     if (!p.st) {
       // live glyph: density follows depth + flap shimmer + per-cell jitter, so
       // the character morphs as the butterfly banks, turns and flaps
-      const shimmer = 0.12 * Math.sin(b.wingPhase * 1.6 + p.ph)
-      const noise = 0.05 * Math.sin(p.ph * 12.9898 + b.wingPhase * 0.3)
+      // morph driven by wall-clock time → fast symbol churn independent of flap
+      const shimmer = 0.16 * Math.sin(t * 0.012 + p.ph * 1.7)
+      const noise = 0.09 * Math.sin(t * 0.021 + p.ph * 12.9898)
       const value = clamp01(p.d * (0.5 + 0.5 * depth01) + shimmer + noise)
       ch = RAMP[Math.round(value * ramp)]
       alpha = 0.55 + 0.45 * depth01
@@ -504,7 +521,7 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
       ctx.restore()
     }
 
-    drawBfly(ctx, b)
+    drawBfly(ctx, b, now)
 
     // emit pollen near the peak of each downstroke (when not perched)
     const flapSin = Math.sin(b.wingPhase)
