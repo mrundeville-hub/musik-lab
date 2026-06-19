@@ -124,6 +124,9 @@ interface Bfly {
   bank: number      // roll around body axis (leaning into turns)
   perched: boolean
   prevTime: number
+  glideUntil: number // performance.now() ms until which the butterfly coasts
+  flapAmp: number    // current flap amplitude (eased 0..1)
+  wander: number     // accumulated heading-wander angle
 }
 
 function makeBfly(w: number, h: number): Bfly {
@@ -132,6 +135,7 @@ function makeBfly(w: number, h: number): Bfly {
     floatPhase: 0, wingPhase: 0,
     heading: -Math.PI / 2, bank: 0,
     perched: false, prevTime: 0,
+    glideUntil: 0, flapAmp: 1, wander: 0,
   }
 }
 
@@ -150,12 +154,13 @@ const PROJ: ProjCell[] = CELLS.map(() => ({ x: 0, y: 0, z: 0, ch: '', s: 1, d: 0
 const FOCAL = 320 // perspective focal length (px)
 
 function drawBfly(ctx: CanvasRenderingContext2D, b: Bfly) {
-  // Wings fold up out of the body plane (true 3D flap, like a real butterfly)
-  const flap = 0.1 + 1.2 * (0.5 + 0.5 * Math.cos(b.wingPhase))
+  // Wings fold up out of the body plane (true 3D flap, like a real butterfly).
+  // Non-sinusoidal: downstroke sharper than upstroke; amplitude eased by state.
+  const shaped = b.wingPhase + 0.4 * Math.sin(b.wingPhase)
+  const flapBase = 0.1 + (0.25 + 1.05 * b.flapAmp) * (0.5 + 0.5 * Math.cos(shaped))
   const pitch = b.perched ? 0.25 : 0.55 // lean the body away from the viewer for depth
   const yaw = b.heading + Math.PI / 2   // sprite head points -y locally
 
-  const cosF = Math.cos(flap), sinF = Math.sin(flap)
   const cosB = Math.cos(b.bank), sinB = Math.sin(b.bank)
   const cosP = Math.cos(pitch), sinP = Math.sin(pitch)
   const cosY = Math.cos(yaw), sinY = Math.sin(yaw)
@@ -166,9 +171,12 @@ function drawBfly(ctx: CanvasRenderingContext2D, b: Bfly) {
     const y0 = cell.row * CELL_H
     let z = 0
     if (!cell.st) {
-      // fold wing around the body (local y) axis
-      z = -Math.abs(x) * sinF
-      x = x * cosF
+      // fold wing around the body (local y) axis; left wing slightly leads right
+      const sideOffset = cell.col < 0 ? 0 : 0.18
+      const f = flapBase + sideOffset * Math.cos(shaped)
+      const cf = Math.cos(f), sf = Math.sin(f)
+      z = -Math.abs(x) * sf
+      x = x * cf
     }
     // bank: roll around body axis (lean into turns)
     const xb = x * cosB + z * sinB
@@ -303,6 +311,14 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
       if (d < nearestDist) { nearestDist = d; nearest = t }
     }
 
+    // glide phases: occasionally stop flapping and coast for ~0.6–1.2 s
+    if (!b.perched && !nearest && now > b.glideUntil && Math.random() < 0.004) {
+      b.glideUntil = now + 600 + Math.random() * 600
+    }
+    const gliding = !b.perched && !nearest && now < b.glideUntil
+    const ampTarget = b.perched ? 0.25 : gliding ? 0.12 : 1
+    b.flapAmp += (ampTarget - b.flapAmp) * Math.min(1, 3 * dt)
+
     // ── sound ──
     const audio = audioRef.current
     if (audio) {
@@ -372,17 +388,21 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
       }
       b.wingPhase += WING_SPEED_FLOAT * 1.4 * dt
     } else {
-      // Lissajous-like idle float
+      // wandering idle drift: smooth-noise heading offset breaks the clean orbit
       b.floatPhase += FLOAT_SPEED
-      const tx = width  * 0.5  + Math.sin(b.floatPhase * 0.71) * width  * 0.28
-      const ty = height * 0.38 + Math.cos(b.floatPhase)         * height * 0.18
+      b.wander += (Math.sin(b.floatPhase * 1.7) + Math.sin(b.floatPhase * 0.43)) * 0.5 * dt
+      const wob = b.wander * 0.6
+      const tx = width * 0.5 + Math.sin(b.floatPhase * 0.71 + wob) * width * 0.28
+      const ty = height * 0.38 + Math.cos(b.floatPhase + wob) * height * 0.18
       b.vx += (tx - b.x) * 0.005
       b.vy += (ty - b.y) * 0.005
       b.vx *= 0.94
       b.vy *= 0.94
       b.x += b.vx
       b.y += b.vy
-      b.wingPhase += WING_SPEED_FLOAT * dt
+      b.wingPhase += WING_SPEED_FLOAT * (gliding ? 0.15 : 1) * dt
+      // flap-coupled vertical bob — butterfly lifts on each beat
+      b.y += Math.sin(b.wingPhase) * 1.4 * b.flapAmp
     }
 
     // Orientation: face the direction of travel, bank into turns
