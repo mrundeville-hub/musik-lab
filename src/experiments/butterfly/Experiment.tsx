@@ -30,80 +30,89 @@ function grey(v: number) {
   return `rgb(${l},${l},${l})`
 }
 
-// [row, col, char, colorIdx, isStatic?]
-// row/col relative to body centre; negative col = left side
-type Cell = [number, number, string, number, boolean?]
-
 // density ramp (sparse → dense) — wing cells pick a glyph from this each frame
 // based on lighting + depth + flap, so the butterfly shimmers as it moves.
 const RAMP = ' .·:;-~=+*coOS%#H@'
 
-// base density per colour role → where each cell sits on the ramp before
-// it is modulated by the live depth/flap of the wing.
-function baseDensity(ci: number) {
-  switch (ci) {
-    case 3: return 1.0 // eyespot
-    case 7: return 0.92 // accent
-    case 0: return 0.8 // bright outline
-    case 4: return 0.68 // light edge
-    case 6: return 0.52 // vein
-    case 1: return 0.32 // membrane
-    case 2: return 0.18 // dark
-    default: return 0.5
+// [row,col] in cell units; col<0 = left wing. d = base density on the ramp.
+// st = static (body/antennae keep their glyph). ch = glyph for static cells.
+type Cell = { row: number; col: number; d: number; st: boolean; ch: string }
+
+const MAX_CELLS = 800
+const COLS = 14 // half-span horizontally (grid is -COLS..COLS)
+const ROWS = 12 // half-span vertically  (grid is -ROWS..ROWS)
+const THRESHOLD = 0.07 // wing density below this → empty (gives the silhouette)
+
+function gauss(dx: number, dy: number, sx: number, sy: number) {
+  return Math.exp(-((dx * dx) / (sx * sx) + (dy * dy) / (sy * sy)))
+}
+
+// Density field in normalized wing space.
+// nx ∈ [0,1] outward from body, ny ∈ [-1,1] (negative = up / forewing).
+function wingField(nx: number, ny: number) {
+  // two overlapping lobes: forewing (upper) + hindwing (lower)
+  const fore = gauss(nx - 0.52, ny + 0.48, 0.5, 0.42)
+  const hind = gauss(nx - 0.42, ny - 0.46, 0.46, 0.4)
+  const wing = Math.max(fore, hind)
+  if (wing < THRESHOLD) return 0
+
+  let d = wing * 0.85
+
+  // rim: a band near the silhouette boundary → crisp dense edge
+  if (wing < THRESHOLD + 0.13) d += 0.4
+
+  // veins: rays from the wing root, density spikes along each line
+  const ang = Math.atan2(ny, nx - 0.06)
+  const rad = Math.hypot(nx - 0.06, ny)
+  for (const v of [-0.9, -0.45, 0.2, 0.7]) {
+    if (rad > 0.15 && Math.abs(ang - v) < 0.08) d += 0.3
   }
+
+  // eyespots: two bright density peaks per wing
+  d += 0.6 * gauss(nx - 0.62, ny + 0.46, 0.12, 0.12) // forewing eye
+  d += 0.5 * gauss(nx - 0.5, ny - 0.46, 0.12, 0.12) // hindwing eye
+
+  return clamp01(d)
 }
 
-// ── left-side wing definitions (mirrored for right) ────────────
-// Line-art wings: orange outline, sparse dotted fill, yellow eye spots
-// Upper (fore) wing — rounded triangle with veins, membrane stipple, eye spot
-const UPPER_L: Cell[] = [
-  [-6, -3, '.', 0], [-6, -4, '-', 0], [-6, -5, '-', 0], [-6, -6, '.', 0],
-  [-5, -2, '/', 0], [-5, -3, ',', 1], [-5, -4, '·', 1], [-5, -5, '·', 1], [-5, -6, '~', 0], [-5, -7, '.', 0],
-  [-4, -1, '/', 0], [-4, -2, '·', 1], [-4, -3, 'O', 3], [-4, -4, '·', 1], [-4, -5, ':', 6], [-4, -6, '·', 1], [-4, -7, '(', 0], [-4, -8, '.', 0],
-  [-3, -1, '|', 0], [-3, -2, ':', 6], [-3, -3, 'O', 3], [-3, -4, '·', 1], [-3, -5, '·', 1], [-3, -6, ':', 6], [-3, -7, '(', 0],
-  [-2, -1, '|', 0], [-2, -2, '·', 1], [-2, -3, ':', 6], [-2, -4, '·', 1], [-2, -5, '·', 1], [-2, -6, ')', 0],
-  [-1, -1, '|', 0], [-1, -2, '`', 0], [-1, -3, '-', 0], [-1, -4, '·', 1], [-1, -5, "'", 0],
-]
+function buildCells(): Cell[] {
+  const cells: Cell[] = []
 
-// Lower (hind) wing — smaller lobe with a scalloped tail
-const LOWER_L: Cell[] = [
-  [1, -1, '|', 0], [1, -2, '·', 1], [1, -3, '·', 1], [1, -4, '-', 0], [1, -5, '.', 0],
-  [2, -1, '|', 0], [2, -2, ':', 6], [2, -3, 'O', 3], [2, -4, '·', 1], [2, -5, ')', 0],
-  [3, -1, '\\', 0], [3, -2, '·', 1], [3, -3, ':', 6], [3, -4, ')', 0],
-  [4, -2, '\\', 0], [4, -3, '_', 0], [4, -4, "'", 0],
-  [5, -3, '`', 0],
-]
+  // body: segmented center column (static glyphs, head → abdomen)
+  const bodyGlyphs = ['@', '8', '8', '8', '8', '#', '#', '#', '8', 'o', '.']
+  for (let i = 0; i < bodyGlyphs.length; i++) {
+    cells.push({ row: -7 + i, col: 0, d: 0.85, st: true, ch: bodyGlyphs[i] })
+  }
+  // antennae (left + right), static
+  const ant: Array<[number, number, string]> = [
+    [-8, -1, '/'], [-9, -2, '~'], [-9, -3, '*'],
+  ]
+  for (const [r, c, ch] of ant) {
+    cells.push({ row: r, col: c, d: 0.8, st: true, ch })
+    cells.push({ row: r, col: -c, d: 0.8, st: true, ch: ch === '/' ? '\\' : ch })
+  }
 
-// Antennae — curve out from the head, bright club tip
-const ANT_L: Cell[] = [
-  [-8, -1, '/', 5, true],
-  [-9, -2, '~', 5, true],
-  [-9, -3, '*', 7, true],
-]
+  // wings: sample the field on the grid, mirror to both sides
+  for (let row = -ROWS; row <= ROWS; row++) {
+    for (let col = 1; col <= COLS; col++) {
+      const nx = col / COLS
+      const ny = row / ROWS
+      const d = wingField(nx, ny)
+      if (d <= 0) continue
+      cells.push({ row, col, d, st: false, ch: '·' })
+      cells.push({ row, col: -col, d, st: false, ch: '·' })
+    }
+  }
 
-// Segmented body — head, furry thorax, tapering abdomen
-const BODY_C: Cell[] = [
-  [-7, 0, '@', 5, true],
-  [-6, 0, '8', 5, true], [-5, 0, '8', 5, true], [-4, 0, '8', 5, true],
-  [-3, 0, '8', 5, true], [-2, 0, '#', 5, true], [-1, 0, '#', 5, true],
-  [0, 0, '#', 5, true], [1, 0, '8', 5, true], [2, 0, 'o', 5, true], [3, 0, '.', 5, true],
-]
-
-function mirrorCells(cells: Cell[]): Cell[] {
-  return cells.map(([r, c, ch, ci, s]) => [
-    r, -c,
-    ch === '/' ? '\\' : ch === '\\' ? '/' : ch === '(' ? ')' : ch === ')' ? '(' : ch,
-    ci, s,
-  ])
+  // safety cap: if the grid ever overflows, keep the densest cells
+  if (cells.length > MAX_CELLS) {
+    cells.sort((a, b) => b.d - a.d)
+    cells.length = MAX_CELLS
+  }
+  return cells
 }
 
-// Full sprite, sorted by colorIdx so fillStyle changes are batched (8 total)
-const SPRITE: Cell[] = [
-  ...UPPER_L, ...mirrorCells(UPPER_L),
-  ...LOWER_L, ...mirrorCells(LOWER_L),
-  ...ANT_L,   ...mirrorCells(ANT_L),
-  ...BODY_C,
-].sort((a, b) => a[3] - b[3])
+const CELLS: Cell[] = buildCells()
 
 // ── butterfly state ────────────────────────────────────────────
 interface Bfly {
@@ -131,12 +140,12 @@ function makeBfly(w: number, h: number): Bfly {
 // Reusable projection buffer to avoid per-frame allocation
 interface ProjCell {
   x: number; y: number; z: number
-  ch: string; ci: number; s: number
+  ch: string; s: number
   d: number // base density on the ramp
   st: boolean // static (body/antenna) → keep its structural glyph
   ph: number // phase seed for shimmer
 }
-const PROJ: ProjCell[] = SPRITE.map(() => ({ x: 0, y: 0, z: 0, ch: '', ci: 0, s: 1, d: 0.5, st: false, ph: 0 }))
+const PROJ: ProjCell[] = CELLS.map(() => ({ x: 0, y: 0, z: 0, ch: '', s: 1, d: 0.5, st: false, ph: 0 }))
 
 const FOCAL = 320 // perspective focal length (px)
 
@@ -151,12 +160,12 @@ function drawBfly(ctx: CanvasRenderingContext2D, b: Bfly) {
   const cosP = Math.cos(pitch), sinP = Math.sin(pitch)
   const cosY = Math.cos(yaw), sinY = Math.sin(yaw)
 
-  for (let i = 0; i < SPRITE.length; i++) {
-    const [row, col, char, ci, isStatic] = SPRITE[i]
-    let x = col * CELL_W
-    const y0 = row * CELL_H
+  for (let i = 0; i < CELLS.length; i++) {
+    const cell = CELLS[i]
+    let x = cell.col * CELL_W
+    const y0 = cell.row * CELL_H
     let z = 0
-    if (!isStatic) {
+    if (!cell.st) {
       // fold wing around the body (local y) axis
       z = -Math.abs(x) * sinF
       x = x * cosF
@@ -176,11 +185,10 @@ function drawBfly(ctx: CanvasRenderingContext2D, b: Bfly) {
     p.x = b.x + X * s
     p.y = b.y + Y * s
     p.z = zp
-    p.ch = char
-    p.ci = ci
+    p.ch = cell.ch
     p.s = s
-    p.st = !!isStatic
-    p.d = baseDensity(ci)
+    p.st = cell.st
+    p.d = cell.d
     p.ph = i
   }
 
@@ -204,12 +212,13 @@ function drawBfly(ctx: CanvasRenderingContext2D, b: Bfly) {
     let ch = p.ch
     let alpha = 1
     if (!p.st) {
-      // live glyph: density follows depth + a flap-driven shimmer, so the
-      // character morphs as the butterfly banks, turns and flaps
-      const shimmer = 0.14 * Math.sin(b.wingPhase * 1.6 + p.ph)
-      const value = Math.max(0, Math.min(1, p.d * (0.5 + 0.5 * depth01) + shimmer))
+      // live glyph: density follows depth + flap shimmer + per-cell jitter, so
+      // the character morphs as the butterfly banks, turns and flaps
+      const shimmer = 0.12 * Math.sin(b.wingPhase * 1.6 + p.ph)
+      const noise = 0.05 * Math.sin(p.ph * 12.9898 + b.wingPhase * 0.3)
+      const value = clamp01(p.d * (0.5 + 0.5 * depth01) + shimmer + noise)
       ch = RAMP[Math.round(value * ramp)]
-      alpha = 0.6 + 0.4 * depth01
+      alpha = 0.55 + 0.45 * depth01
     }
     const px = Math.round(p.x), py = Math.round(p.y)
     ctx.globalAlpha = alpha
