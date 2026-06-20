@@ -5,7 +5,7 @@ Built with React, TypeScript, Vite, Tailwind CSS, MediaPipe, Canvas 2D, Three.js
 and Rapier. Each piece opens in a fullscreen stage with pause, reset, fullscreen,
 info and local video recording.
 
-> 🇷🇺 [Русская версия ниже](#-musiklab-русский)
+> [Русская версия ниже](#musiklab-русский)
 
 ---
 
@@ -99,7 +99,7 @@ runtime.
 
 ---
 
-## 🇷🇺 MUSIK.LAB (Русский)
+## MUSIK.LAB (Русский)
 
 Интерактивная лаборатория creative-coding — галерея небольших экспериментов,
 управляемых веб-камерой. Сделано на React, TypeScript, Vite, Tailwind CSS,
