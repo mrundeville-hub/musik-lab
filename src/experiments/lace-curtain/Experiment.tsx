@@ -249,22 +249,19 @@ function Curtains({ video, paused }: { video: HTMLVideoElement } & ExperimentPro
       if (f) initedFace.current = true
     }
 
-    // ── parting: a fingertip must grab near a leading edge to drag it. with
-    // no grab each half eases back shut, so the curtains stay closed (and the
-    // centre overlap keeps the face covered) until you actually pull them apart
-    const grabDist = regionW * 0.22
+    // ── parting: a finger left of centre drags the left half toward it, a
+    // finger right of centre drags the right half. with no finger each half
+    // eases back to its overlapped closed position (face covered by default).
     let tgtL = closedL
     let tgtR = closedR
     for (const t of tips.current) {
       if (t.y < rodY - regionH - 1 || t.y > rodY + 1) continue // off the drape
-      const dl = Math.abs(t.x - innerL.current)
-      const dr = Math.abs(t.x - innerR.current)
-      if (dl < grabDist && dl <= dr) tgtL = Math.min(tgtL, t.x)
-      else if (dr < grabDist) tgtR = Math.max(tgtR, t.x)
+      if (t.x < centerX) tgtL = Math.min(tgtL, t.x)
+      else tgtR = Math.max(tgtR, t.x)
     }
     tgtL = clamp(tgtL, outerL + restDXL, closedL)
     tgtR = clamp(tgtR, closedR, outerR - restDXR)
-    const followL = tgtL < innerL.current ? 0.35 : 0.08 // grab fast, release slower
+    const followL = tgtL < innerL.current ? 0.35 : 0.08 // open fast, close slower
     const followR = tgtR > innerR.current ? 0.35 : 0.08
     innerL.current += (tgtL - innerL.current) * followL
     innerR.current += (tgtR - innerR.current) * followR
