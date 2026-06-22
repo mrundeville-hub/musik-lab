@@ -224,14 +224,14 @@ function Curtains({ video, paused }: { video: HTMLVideoElement } & ExperimentPro
     const f = face.current
     const fcx = f ? f.cx : 0
     const fcy = f ? f.cy : 0
-    const regionW = (f ? f.w * 2.2 : vw * 0.5)
-    const regionH = (f ? f.h * 2.4 : vh * 0.6)
+    const regionW = (f ? f.w * 1.5 : vw * 0.45)
+    const regionH = (f ? f.h * 1.9 : vh * 0.55)
     const outerL = fcx - regionW / 2
     const outerR = fcx + regionW / 2
-    const rodY = fcy + regionH * 0.55
+    const rodY = fcy + regionH * 0.5
     const centerX = fcx
     // closed panels overlap past the centre so the face is fully covered
-    const ov = regionW * 0.08
+    const ov = regionW * 0.12
     const closedL = centerX + ov
     const closedR = centerX - ov
     const restDXL = (closedL - outerL) / (C - 1)
@@ -249,18 +249,23 @@ function Curtains({ video, paused }: { video: HTMLVideoElement } & ExperimentPro
       if (f) initedFace.current = true
     }
 
-    // ── leading edges follow the fingers (drag a half open) ──
+    // ── parting: a fingertip must grab near a leading edge to drag it. with
+    // no grab each half eases back shut, so the curtains stay closed (and the
+    // centre overlap keeps the face covered) until you actually pull them apart
+    const grabDist = regionW * 0.22
     let tgtL = closedL
     let tgtR = closedR
     for (const t of tips.current) {
       if (t.y < rodY - regionH - 1 || t.y > rodY + 1) continue // off the drape
-      if (t.x < centerX) tgtL = Math.min(tgtL, t.x)
-      else tgtR = Math.max(tgtR, t.x)
+      const dl = Math.abs(t.x - innerL.current)
+      const dr = Math.abs(t.x - innerR.current)
+      if (dl < grabDist && dl <= dr) tgtL = Math.min(tgtL, t.x)
+      else if (dr < grabDist) tgtR = Math.max(tgtR, t.x)
     }
     tgtL = clamp(tgtL, outerL + restDXL, closedL)
     tgtR = clamp(tgtR, closedR, outerR - restDXR)
-    const followL = tgtL < innerL.current ? 0.35 : 0.04 // grab fast, release slow
-    const followR = tgtR > innerR.current ? 0.35 : 0.04
+    const followL = tgtL < innerL.current ? 0.35 : 0.08 // grab fast, release slower
+    const followR = tgtR > innerR.current ? 0.35 : 0.08
     innerL.current += (tgtL - innerL.current) * followL
     innerR.current += (tgtR - innerR.current) * followR
 
