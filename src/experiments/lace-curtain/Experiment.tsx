@@ -119,10 +119,13 @@ function step(
     for (let c = 0; c < C; c++)
       for (let r = 0; r < R - 1; r++) constrain(pos, r * C + c, (r + 1) * C + c, restDY)
   }
-  // pull each column toward its fold depth → crisp vertical pleats
+  // pull each column toward its fold depth → vertical pleats. taper toward the
+  // hem so the free bottom edge stays calm instead of curling/twisting.
   for (let i = C; i < N; i++) {
     const o = i * 3
-    const tz = foldDepth * Math.sin((i % C) * FOLDK)
+    const row = (i / C) | 0
+    const taper = 1 - 0.55 * (row / (R - 1))
+    const tz = foldDepth * taper * Math.sin((i % C) * FOLDK)
     pos[o + 2] += (tz - pos[o + 2]) * 0.25
   }
 }
@@ -224,8 +227,8 @@ function Curtains({ video, paused }: { video: HTMLVideoElement } & ExperimentPro
     const f = face.current
     const fcx = f ? f.cx : 0
     const fcy = f ? f.cy : 0
-    const regionW = (f ? f.w * 1.5 : vw * 0.45)
-    const regionH = (f ? f.h * 1.9 : vh * 0.55)
+    const regionW = (f ? f.w * 2.3 : vw * 0.6)
+    const regionH = (f ? f.h * 1.4 : vh * 0.45)
     const outerL = fcx - regionW / 2
     const outerR = fcx + regionW / 2
     const rodY = fcy + regionH * 0.5
@@ -275,14 +278,14 @@ function Curtains({ video, paused }: { video: HTMLVideoElement } & ExperimentPro
     }
     const gatherL = (closedL - outerL) / Math.max(innerL.current - outerL, 0.3)
     const gatherR = (outerR - closedR) / Math.max(outerR - innerR.current, 0.3)
-    const foldL = 0.18 + 0.12 * Math.min(gatherL, 4)
-    const foldR = 0.18 + 0.12 * Math.min(gatherR, 4)
+    const foldL = 0.12 + 0.08 * Math.min(gatherL, 4)
+    const foldR = 0.12 + 0.08 * Math.min(gatherR, 4)
 
     // ── simulate ──
     const h = Math.min(delta || 1 / 60, 1 / 30)
     const t = now * 0.001
-    step(left, pinXL, rodY, restDXL, restDY, t, 0.8, foldL, 0, h)
-    step(right, pinXR, rodY, restDXR, restDY, t, 0.8, foldR, Math.PI, h)
+    step(left, pinXL, rodY, restDXL, restDY, t, 0.5, foldL, 0, h)
+    step(right, pinXR, rodY, restDXR, restDY, t, 0.5, foldR, Math.PI, h)
 
     // NaN guard
     if (!Number.isFinite(left.pos[0]) || !Number.isFinite(right.pos[0])) {
