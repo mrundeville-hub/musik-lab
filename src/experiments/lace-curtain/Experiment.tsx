@@ -5,6 +5,9 @@ import type { FaceLandmarker, HandLandmarker } from '@mediapipe/tasks-vision'
 import type { ExperimentProps } from '@/shared/types'
 import { WebcamGate } from '@/shared/components/WebcamGate'
 import { createFaceLandmarker, createHandLandmarker } from '@/shared/lib/mediapipe'
+import { useGlassAudio } from '@/shared/hooks/useGlassAudio'
+import { SoundToggle } from '@/shared/components/SoundToggle'
+import { GLASS_SCALE, type GlassAudio } from '@/shared/lib/glassAudio'
 
 // ── cloth grid ─────────────────────────────────────────────────
 const C = 12 // particle columns per panel
@@ -150,7 +153,11 @@ function constrain(pos: Float32Array, a: number, b: number, rest: number) {
 }
 
 // ── the curtain scene (inside the r3f canvas) ──────────────────
-function Curtains({ video, paused }: { video: HTMLVideoElement } & ExperimentProps) {
+function Curtains({
+  video,
+  paused,
+  audioRef,
+}: { video: HTMLVideoElement; audioRef: React.RefObject<GlassAudio | null> } & ExperimentProps) {
   const { viewport } = useThree()
   const handLm = useRef<HandLandmarker | null>(null)
   const faceLm = useRef<FaceLandmarker | null>(null)
@@ -161,6 +168,11 @@ function Curtains({ video, paused }: { video: HTMLVideoElement } & ExperimentPro
   const innerR = useRef(0)
   const inited = useRef(false)
   const initedFace = useRef(false)
+  // audio bookkeeping
+  const prevL = useRef(0)
+  const prevR = useRef(0)
+  const nextPart = useRef(0)
+  const nextSway = useRef(0)
 
   const left = useMemo(() => makePanel(), [])
   const right = useMemo(() => makePanel(), [])
@@ -186,6 +198,7 @@ function Curtains({ video, paused }: { video: HTMLVideoElement } & ExperimentPro
   useFrame((_, delta) => {
     if (paused) return
     const now = performance.now()
+    const h = Math.min(delta || 1 / 60, 1 / 30) // sim timestep (s)
     const vw = viewport.width
     const vh = viewport.height
 
@@ -276,13 +289,57 @@ function Curtains({ video, paused }: { video: HTMLVideoElement } & ExperimentPro
       pinXL.push(outerL + (innerL.current - outerL) * (c / (C - 1)))
       pinXR.push(outerR + (innerR.current - outerR) * (c / (C - 1)))
     }
+    // ── glass voices for parting / closing / idle sway ──
+    const audio = audioRef.current
+    if (audio) {
+      const travelL = Math.max(closedL - (outerL + restDXL), 1e-3)
+      const travelR = Math.max((outerR - restDXR) - closedR, 1e-3)
+      const openL = clamp((closedL - innerL.current) / travelL, 0, 1)
+      const openR = clamp((innerR.current - closedR) / travelR, 0, 1)
+      const vOpenL = (prevL.current - innerL.current) / Math.max(h, 1e-3) // >0 opening
+      const vOpenR = (innerR.current - prevR.current) / Math.max(h, 1e-3)
+      const vCloseL = -vOpenL
+      const vCloseR = -vOpenR
+      prevL.current = innerL.current
+      prevR.current = innerR.current
+
+      if (now > nextPart.current) {
+        const opening = Math.max(vOpenL, vOpenR)
+        const closing = Math.max(vCloseL, vCloseR)
+        if (opening > 0.5) {
+          // pulling apart: bright glass bell rising with how far it's open + sparkle
+          const side = vOpenL >= vOpenR ? -1 : 1
+          const frac = side < 0 ? openL : openR
+          const idx = Math.min(5, Math.floor(frac * 6))
+          audio.bell(GLASS_SCALE[idx], { bright: 0.95, dur: 1.3, gain: 0.32, pan: side * 0.5 })
+          audio.sparkle(side * 0.5)
+          nextPart.current = now + 90 + Math.random() * 110
+        } else if (closing > 0.5) {
+          // sliding shut: low, soft, mellow
+          const side = vCloseL >= vCloseR ? -1 : 1
+          audio.bell(GLASS_SCALE[Math.floor(Math.random() * 2)] / 2, { bright: 0.25, dur: 2.6, gain: 0.24, pan: side * 0.5 })
+          nextPart.current = now + 220 + Math.random() * 200
+        }
+      }
+
+      // idle shimmer that rides the gentle billow — sparse, weird, pretty
+      if (now > nextSway.current) {
+        const pan = (Math.random() * 2 - 1) * 0.45
+        audio.sparkle(pan)
+        if (Math.random() < 0.4) {
+          const f = GLASS_SCALE[2 + Math.floor(Math.random() * 4)] * (Math.random() < 0.5 ? 1 : 0.5)
+          audio.bell(f, { bright: 0.4, dur: 3.2, gain: 0.16, pan })
+        }
+        nextSway.current = now + 1500 + Math.random() * 2400
+      }
+    }
+
     const gatherL = (closedL - outerL) / Math.max(innerL.current - outerL, 0.3)
     const gatherR = (outerR - closedR) / Math.max(outerR - innerR.current, 0.3)
     const foldL = 0.12 + 0.08 * Math.min(gatherL, 4)
     const foldR = 0.12 + 0.08 * Math.min(gatherR, 4)
 
     // ── simulate ──
-    const h = Math.min(delta || 1 / 60, 1 / 30)
     const t = now * 0.001
     step(left, pinXL, rodY, restDXL, restDY, t, 0.5, foldL, 0, h)
     step(right, pinXR, rodY, restDXR, restDY, t, 0.5, foldR, Math.PI, h)
@@ -366,8 +423,9 @@ function VideoBackdrop({ video }: { video: HTMLVideoElement }) {
 }
 
 function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps) {
+  const { audioRef, muted, toggleMuted } = useGlassAudio(paused, 0.7)
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full" onPointerDown={() => audioRef.current?.resume()}>
       <VideoBackdrop video={video} />
       <Canvas
         orthographic
@@ -377,8 +435,9 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
         gl={{ preserveDrawingBuffer: true, alpha: true }}
         className="absolute inset-0"
       >
-        <Curtains video={video} paused={paused} />
+        <Curtains video={video} paused={paused} audioRef={audioRef} />
       </Canvas>
+      <SoundToggle muted={muted} onToggle={toggleMuted} />
     </div>
   )
 }
