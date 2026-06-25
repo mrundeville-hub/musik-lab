@@ -46,6 +46,18 @@ The `dist/` folder is static — deploy it to any static host (GitHub Pages,
 Netlify, Vercel, Cloudflare Pages, etc.). The site must be served over HTTPS for
 the camera to work in production.
 
+### Want a desktop app instead?
+
+If you'd rather run it as a native window (Electron) instead of in a browser:
+
+```bash
+npm run desktop          # build and launch in a native window
+npm run desktop:build    # package a distributable .app (macOS only)
+```
+
+`npm run desktop` works on any OS; `desktop:build` uses electron-builder and is
+configured for macOS.
+
 ### Want to modify it?
 
 Fork the repo on GitHub (button top-right), or just edit your local clone — it's
@@ -142,6 +154,18 @@ npm run lint      # проверить стиль кода
 Папка `dist/` — статика, её можно выложить на любой статический хостинг (GitHub
 Pages, Netlify, Vercel, Cloudflare Pages и т.д.). В продакшене сайт должен
 открываться по HTTPS, иначе камера не заработает.
+
+### Хочешь десктопное приложение?
+
+Если хочешь запускать не в браузере, а отдельным нативным окном (Electron):
+
+```bash
+npm run desktop          # собрать и запустить в нативном окне
+npm run desktop:build    # упаковать .app для распространения (только macOS)
+```
+
+`npm run desktop` работает на любой ОС; `desktop:build` использует
+electron-builder и настроен под macOS.
 
 ### Хочешь изменить?
 
