@@ -5,6 +5,9 @@ import { WebcamGate } from '@/shared/components/WebcamGate'
 import { useAnimationLoop } from '@/shared/hooks/useAnimationLoop'
 import { useCanvas2D } from '@/shared/hooks/useCanvas2D'
 import { createHandLandmarker } from '@/shared/lib/mediapipe'
+import { GLASS_SCALE } from '@/shared/lib/glassAudio'
+import { useGlassAudio } from '@/shared/hooks/useGlassAudio'
+import { SoundToggle } from '@/shared/components/SoundToggle'
 
 const QUOTES = [
   [
@@ -397,11 +400,13 @@ function drawHandTarget(ctx: CanvasRenderingContext2D, hand: HandState, elapsed:
 
 function PalmGravityStage({ video, paused }: { video: HTMLVideoElement; paused: boolean }) {
   const { canvasRef, ctxRef, sizeRef } = useCanvas2D()
+  const { audioRef, muted, toggleMuted } = useGlassAudio(paused, 0.8)
   const landmarkerRef = useRef<HandLandmarker | null>(null)
   const lastDetectRef = useRef(0)
   const handRef = useRef<HandState>({ seen: false, openness: 0, open: false, fist: false, x: 0, y: 0 })
   const pullRef = useRef(0)
   const wasFistRef = useRef(false)
+  const wasEngagedRef = useRef(false)
   const particlesRef = useRef<Particle[]>([])
   const layoutKeyRef = useRef('')
   const quotesRef = useRef<string[][]>(randomQuotePair())
@@ -456,11 +461,21 @@ function PalmGravityStage({ video, paused }: { video: HTMLVideoElement; paused: 
       swapPoems(particlesRef.current)
       nextQuote()
       layoutKeyRef.current = ''
+      // closing the fist recomposes the quote — a low consonant glass chord
+      audioRef.current?.chord(GLASS_SCALE[0], { bright: 0.5, dur: 3.2, gain: 0.4 })
     }
 
     const targetPull = hand.seen && hand.open ? hand.openness : 0
     pullRef.current = lerp(pullRef.current, targetPull, 1 - Math.exp(-delta * 4.2))
     const pull = pullRef.current
+
+    // the moment the open palm crosses into the event horizon: a bright bell swell
+    const engaged = pull > 0.2
+    if (engaged && !wasEngagedRef.current) {
+      const pan = hand.seen ? Math.max(-1, Math.min(1, (hand.x / sizeRef.current.width) * 2 - 1)) : 0
+      audioRef.current?.bell(GLASS_SCALE[4], { bright: 0.95, dur: 2.6, gain: 0.34, pan })
+    }
+    wasEngagedRef.current = engaged
     const centerX = hand.seen ? hand.x : width * 0.5
     const centerY = hand.seen ? hand.y : height * 0.48
     const radius = clamp(Math.min(width, height) * (0.07 + pull * 0.045), 32, 74)
@@ -567,7 +582,12 @@ function PalmGravityStage({ video, paused }: { video: HTMLVideoElement; paused: 
     ctx.fillText(label, 18, height - 28)
   }, paused)
 
-  return <canvas ref={canvasRef} className="absolute inset-0 h-full w-full bg-black" />
+  return (
+    <div className="relative h-full w-full">
+      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full bg-black" />
+      <SoundToggle muted={muted} onToggle={toggleMuted} />
+    </div>
+  )
 }
 
 export default function PalmGravityExperiment({ paused }: ExperimentProps) {
