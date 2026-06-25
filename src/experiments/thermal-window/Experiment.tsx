@@ -3,6 +3,9 @@ import type { HandLandmarker, NormalizedLandmark } from '@mediapipe/tasks-vision
 
 import { WebcamGate } from '@/shared/components/WebcamGate'
 import { createHandLandmarker } from '@/shared/lib/mediapipe'
+import { GLASS_SCALE } from '@/shared/lib/glassAudio'
+import { useGlassAudio } from '@/shared/hooks/useGlassAudio'
+import { SoundToggle } from '@/shared/components/SoundToggle'
 import type { ExperimentProps } from '@/shared/types'
 
 type Point = { x: number; y: number }
@@ -278,6 +281,8 @@ function ThermalWindowStage({ video, paused }: { video: HTMLVideoElement; paused
   const quadRef = useRef<ThermalQuad | null>(null)
   const thermalCanvas = useMemo(() => document.createElement('canvas'), [])
   const [ready, setReady] = useState(false)
+  const { audioRef, muted, toggleMuted } = useGlassAudio(paused, 0.8)
+  const wasOpenRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -379,6 +384,15 @@ function ThermalWindowStage({ video, paused }: { video: HTMLVideoElement; paused
       ctx.fillRect(0, 0, width, height)
       ctx.restore()
 
+      // the thermal window opening (both hands frame it) is the key interaction
+      const open = hands.length >= 2 && !!targetQuad
+      if (open && !wasOpenRef.current && quadRef.current) {
+        const cx = (quadRef.current.topLeft.x + quadRef.current.topRight.x) / 2
+        const pan = Math.max(-1, Math.min(1, (cx / width) * 2 - 1))
+        audioRef.current?.chord(GLASS_SCALE[3], { bright: 0.85, dur: 3.6, gain: 0.36, pan })
+      }
+      wasOpenRef.current = open
+
       if (quadRef.current) {
         drawThermalWindow(ctx, thermalCtx, quadRef.current, width, height, now)
       }
@@ -389,7 +403,7 @@ function ThermalWindowStage({ video, paused }: { video: HTMLVideoElement; paused
 
     rafRef.current = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [paused, ready, thermalCanvas, video])
+  }, [paused, ready, thermalCanvas, video, audioRef])
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
@@ -398,6 +412,7 @@ function ThermalWindowStage({ video, paused }: { video: HTMLVideoElement; paused
       <div className="pointer-events-none absolute left-3 top-3 rounded-[5px] border border-white/20 bg-black/35 px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white/78 backdrop-blur">
         thermal-window
       </div>
+      <SoundToggle muted={muted} onToggle={toggleMuted} />
     </div>
   )
 }
