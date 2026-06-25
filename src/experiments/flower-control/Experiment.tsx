@@ -5,11 +5,12 @@ import { WebcamGate } from '@/shared/components/WebcamGate'
 import type { ExperimentProps } from '@/shared/types'
 import { createHandLandmarker } from '@/shared/lib/mediapipe'
 import { registerAudioStream } from '@/shared/lib/audioCapture'
+import { publicAsset } from '@/shared/lib/assets'
 
 const FLOWERS = [
-  { name: 'hibiscus', src: '/flowers/hibiscus.mp4' },
-  { name: 'lily', src: '/flowers/lily.mp4' },
-  { name: 'poppy', src: '/flowers/poppy.mp4' },
+  { name: 'hibiscus', src: publicAsset('flowers/hibiscus.mp4') },
+  { name: 'lily', src: publicAsset('flowers/lily.mp4') },
+  { name: 'poppy', src: publicAsset('flowers/poppy.mp4') },
 ] as const
 
 const PINCH_SWITCH_THRESHOLD = 0.34

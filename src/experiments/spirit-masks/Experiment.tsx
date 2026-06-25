@@ -4,6 +4,7 @@ import { WebcamGate } from '@/shared/components/WebcamGate'
 import { SoundToggle } from '@/shared/components/SoundToggle'
 import type { ExperimentProps } from '@/shared/types'
 import { createFaceLandmarker, createHandLandmarker } from '@/shared/lib/mediapipe'
+import { publicAsset } from '@/shared/lib/assets'
 import { drawLabel, resizeCanvas, TinyAudio } from '../_shared/asciiTools'
 
 // ---- mask point clouds sampled from reference images -----------------------
@@ -39,15 +40,15 @@ interface MaskDef {
 }
 
 const MASK_DEFS = [
-  { name: 'BARONG LACQUER', src: '/masks/barong_reference_cut.png', faceHeight: 4.8, anchorY: 0.43, fitScale: 1.34, fitYOffset: 0.02 },
-  { name: 'CRACKED GHOST', src: '/masks/ghost_reference_cut.png', faceHeight: 4.7, anchorY: 0.36, fitScale: 1.28, fitYOffset: 0.05 },
-  { name: 'WHITE ONI', src: '/masks/oni_reference_cut.png', faceHeight: 4.35, anchorY: 0.38, fitScale: 1.18, fitYOffset: 0.04 },
-  { name: 'DUMMY', src: '/masks/dummy_generated.png', faceHeight: 4.25, anchorY: 0.39, fitScale: 1.18, fitYOffset: 0.02 },
-  { name: 'PORCELAIN SKULL', src: '/masks/skull_generated.png', faceHeight: 4.2, anchorY: 0.39, fitScale: 1.2, fitYOffset: 0.04 },
-  { name: 'DOMINO CHARM', src: '/masks/domino_generated.png', faceHeight: 2.25, anchorY: 0.48, fitScale: 0.78, fitYOffset: -0.04 },
-  { name: 'LUCHA HEART', src: '/masks/lucha_generated.png', faceHeight: 4.35, anchorY: 0.39, fitScale: 1.22, fitYOffset: 0.03 },
-  { name: 'THOUSAND EYES', src: '/masks/eyes_generated.png', faceHeight: 4.45, anchorY: 0.37, fitScale: 1.2, fitYOffset: 0.05 },
-  { name: 'GOLD NASO', src: '/masks/naso_generated.png', faceHeight: 4.35, anchorY: 0.38, fitScale: 1.18, fitYOffset: 0.04 },
+  { name: 'BARONG LACQUER', src: publicAsset('masks/barong_reference_cut.png'), faceHeight: 4.8, anchorY: 0.43, fitScale: 1.34, fitYOffset: 0.02 },
+  { name: 'CRACKED GHOST', src: publicAsset('masks/ghost_reference_cut.png'), faceHeight: 4.7, anchorY: 0.36, fitScale: 1.28, fitYOffset: 0.05 },
+  { name: 'WHITE ONI', src: publicAsset('masks/oni_reference_cut.png'), faceHeight: 4.35, anchorY: 0.38, fitScale: 1.18, fitYOffset: 0.04 },
+  { name: 'DUMMY', src: publicAsset('masks/dummy_generated.png'), faceHeight: 4.25, anchorY: 0.39, fitScale: 1.18, fitYOffset: 0.02 },
+  { name: 'PORCELAIN SKULL', src: publicAsset('masks/skull_generated.png'), faceHeight: 4.2, anchorY: 0.39, fitScale: 1.2, fitYOffset: 0.04 },
+  { name: 'DOMINO CHARM', src: publicAsset('masks/domino_generated.png'), faceHeight: 2.25, anchorY: 0.48, fitScale: 0.78, fitYOffset: -0.04 },
+  { name: 'LUCHA HEART', src: publicAsset('masks/lucha_generated.png'), faceHeight: 4.35, anchorY: 0.39, fitScale: 1.22, fitYOffset: 0.03 },
+  { name: 'THOUSAND EYES', src: publicAsset('masks/eyes_generated.png'), faceHeight: 4.45, anchorY: 0.37, fitScale: 1.2, fitYOffset: 0.05 },
+  { name: 'GOLD NASO', src: publicAsset('masks/naso_generated.png'), faceHeight: 4.35, anchorY: 0.38, fitScale: 1.18, fitYOffset: 0.04 },
 ] satisfies MaskDef[]
 
 const N_PARTICLES = 6800

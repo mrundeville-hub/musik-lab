@@ -3,11 +3,35 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:desktop": "tsc -b && vite build --mode desktop",
+    "desktop": "npm run build:desktop && electron .",
+    "desktop:build": "npm run build:desktop && electron-builder --mac",
     "lint": "eslint .",
     "preview": "vite preview"
+  },
+  "build": {
+    "appId": "lab.musik.desktop",
+    "productName": "musik.lab",
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.entertainment",
+      "icon": "build/icon.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "extendInfo": {
+        "NSCameraUsageDescription": "musik.lab uses the camera locally to drive interactive visual experiments."
+      }
+    }
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.35",
@@ -27,6 +51,8 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "electron": "^42.5.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",

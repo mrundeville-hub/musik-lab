@@ -6,13 +6,15 @@ import {
   PoseLandmarker,
 } from '@mediapipe/tasks-vision'
 
-const WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304/wasm'
+import { publicAsset } from '@/shared/lib/assets'
+
+const WASM_URL = publicAsset('mediapipe/wasm')
 
 const MODELS = {
-  hand: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
-  face: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-  pose: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/latest/pose_landmarker_lite.task',
-  selfie: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',
+  hand: publicAsset('mediapipe/models/hand_landmarker.task'),
+  face: publicAsset('mediapipe/models/face_landmarker.task'),
+  pose: publicAsset('mediapipe/models/pose_landmarker_lite.task'),
+  selfie: publicAsset('mediapipe/models/selfie_segmenter.tflite'),
 }
 
 let fileset: Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>> | null = null
