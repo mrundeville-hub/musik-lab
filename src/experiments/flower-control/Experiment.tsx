@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import type { HandLandmarker, NormalizedLandmark } from '@mediapipe/tasks-vision'
 
 import { WebcamGate } from '@/shared/components/WebcamGate'
+import { SoundToggle } from '@/shared/components/SoundToggle'
 import type { ExperimentProps } from '@/shared/types'
 import { createHandLandmarker } from '@/shared/lib/mediapipe'
-import { registerAudioStream } from '@/shared/lib/audioCapture'
+import { onCaptureWake, registerAudioStream } from '@/shared/lib/audioCapture'
 import { publicAsset } from '@/shared/lib/assets'
 
 const FLOWERS = [
@@ -207,11 +208,13 @@ function FlowerControlStage({ video, paused }: { video: HTMLVideoElement; paused
   const audioRef = useRef<{
     ctx: AudioContext
     master: GainNode
+    monitor: GainNode
     filter: BiquadFilterNode
     shimmerGain: GainNode
     drone: Array<{ node: OscillatorNode; mult: number }>
     shimmer: OscillatorNode
   } | null>(null)
+  const [muted, setMuted] = useState(false)
   const [clipIndex, setClipIndex] = useState(0)
   const [framesReady, setFramesReady] = useState(false)
   const [decodeProgress, setDecodeProgress] = useState('loading flower')
@@ -245,12 +248,15 @@ function FlowerControlStage({ video, paused }: { video: HTMLVideoElement; paused
 
     const master = ctx.createGain()
     master.gain.value = 0.0001
-    master.connect(ctx.destination)
+    const monitor = ctx.createGain()
+    monitor.gain.value = 1
+    master.connect(monitor)
+    monitor.connect(ctx.destination)
 
-    // Tap the master bus so the screen recorder can capture the synth.
     const capture = ctx.createMediaStreamDestination()
     master.connect(capture)
     const unregisterCapture = registerAudioStream(capture.stream)
+    const unregisterWake = onCaptureWake(() => void ctx.resume())
 
     const filter = ctx.createBiquadFilter()
     filter.type = 'lowpass'
@@ -287,7 +293,7 @@ function FlowerControlStage({ video, paused }: { video: HTMLVideoElement; paused
     lfo.connect(lfoGain).connect(filter.frequency)
     lfo.start()
 
-    audioRef.current = { ctx, master, filter, shimmerGain, drone, shimmer }
+    audioRef.current = { ctx, master, monitor, filter, shimmerGain, drone, shimmer }
 
     const resume = () => void ctx.resume()
     void ctx.resume()
@@ -295,6 +301,7 @@ function FlowerControlStage({ video, paused }: { video: HTMLVideoElement; paused
 
     return () => {
       window.removeEventListener('pointerdown', resume)
+      unregisterWake()
       unregisterCapture()
       drone.forEach(({ node }) => node.stop())
       shimmer.stop()
@@ -313,6 +320,12 @@ function FlowerControlStage({ video, paused }: { video: HTMLVideoElement; paused
     audio.drone.forEach(({ node, mult }) => node.frequency.setTargetAtTime(base * mult, t, 0.25))
     audio.shimmer.frequency.setTargetAtTime(base * 4, t, 0.25)
   }, [clipIndex])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.monitor.gain.setTargetAtTime(muted || paused ? 0 : 1, audio.ctx.currentTime, 0.08)
+  }, [muted, paused])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -551,6 +564,8 @@ function FlowerControlStage({ video, paused }: { video: HTMLVideoElement; paused
       </div>
 
       <canvas ref={overlayRef} className="pointer-events-none absolute inset-0 h-full w-full" />
+
+      <SoundToggle muted={muted} onToggle={() => { setMuted((m) => !m); audioRef.current?.ctx.resume() }} />
 
       <div className="pointer-events-none absolute left-3 right-3 top-3 flex items-start justify-between font-mono text-[9px] uppercase tracking-[0.18em] text-white/80">
         <span className="rounded-[5px] border border-white/20 bg-black/35 px-2.5 py-1.5 backdrop-blur">

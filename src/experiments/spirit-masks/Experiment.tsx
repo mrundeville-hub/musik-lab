@@ -5,7 +5,8 @@ import { SoundToggle } from '@/shared/components/SoundToggle'
 import type { ExperimentProps } from '@/shared/types'
 import { createFaceLandmarker, createHandLandmarker } from '@/shared/lib/mediapipe'
 import { publicAsset } from '@/shared/lib/assets'
-import { drawLabel, resizeCanvas, TinyAudio } from '../_shared/asciiTools'
+import { drawLabel, resizeCanvas } from '../_shared/asciiTools'
+import { useTinyAudio } from '@/shared/hooks/useTinyAudio'
 
 // ---- mask point clouds sampled from reference images -----------------------
 // Each mask is built from a background-removed PNG in public/masks/: opaque
@@ -218,8 +219,7 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
   const videoRef = useRef<HTMLVideoElement>(null)
   const faceRef = useRef<FaceLandmarker | null>(null)
   const handRef = useRef<HandLandmarker | null>(null)
-  const audioRef = useRef(new TinyAudio())
-  const [muted, setMuted] = useState(false)
+  const { audioRef, muted, toggleMuted } = useTinyAudio(paused)
   const [maskName, setMaskName] = useState('LOADING')
   const masksRef = useRef<Mask[]>([])
   const maskIdxRef = useRef(0)
@@ -251,7 +251,6 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
 
   useEffect(() => {
     let alive = true
-    const audio = audioRef.current
     void Promise.all(MASK_DEFS.map((d) => buildFromImage(d))).then((all) => {
       if (!alive) return
       masksRef.current = MASK_DEFS.map((d, i) => ({
@@ -276,11 +275,8 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
       alive = false
       faceRef.current?.close()
       handRef.current?.close()
-      audio.dispose()
     }
   }, [])
-
-  useEffect(() => audioRef.current.setMuted(muted || paused), [muted, paused])
 
   useEffect(() => {
     let raf = 0
@@ -504,7 +500,7 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
         {maskName}
       </div>
       <div className="absolute right-3 top-3">
-        <SoundToggle muted={muted} onToggle={() => setMuted((v) => !v)} />
+        <SoundToggle muted={muted} onToggle={toggleMuted} />
       </div>
     </div>
   )

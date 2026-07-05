@@ -58,7 +58,7 @@ export function HomePage() {
             <span>
               {visible.length} of {experiments.length} modules · camera ready ●
             </span>
-            <span>mp4 / webm</span>
+            <span>webm · open in VLC or Chrome for audio</span>
           </>
         }
       >

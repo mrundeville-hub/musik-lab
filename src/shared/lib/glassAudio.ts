@@ -9,7 +9,7 @@
  * Caller owns dispose().
  */
 
-import { registerAudioStream } from '@/shared/lib/audioCapture'
+import { onCaptureWake, registerAudioStream } from '@/shared/lib/audioCapture'
 
 // pentatonic-ish set that stays consonant at any combination (D major add9 field)
 export const GLASS_SCALE = [293.66, 369.99, 440.0, 554.37, 659.25, 880.0]
@@ -34,6 +34,7 @@ function makeShimmerImpulse(ctx: AudioContext, seconds: number): AudioBuffer {
 export class GlassAudio {
   private ctx: AudioContext
   private master: GainNode
+  private monitor: GainNode
   private wet: GainNode
   private padOscs: OscillatorNode[] = []
   private padGain: GainNode
@@ -41,17 +42,22 @@ export class GlassAudio {
   private lfos: OscillatorNode[] = []
   private disposed = false
   private unregisterCapture: (() => void) | null = null
+  private unregisterWake: (() => void) | null = null
 
   constructor() {
     this.ctx = new AudioContext()
     this.master = this.ctx.createGain()
     this.master.gain.value = 0.5
-    this.master.connect(this.ctx.destination)
+    this.monitor = this.ctx.createGain()
+    this.monitor.gain.value = 0.5
+    this.master.connect(this.monitor)
+    this.monitor.connect(this.ctx.destination)
 
-    // tap the master for the screen recorder
+    // tap the master for the screen recorder (pre-monitor so mute doesn't silence exports)
     const streamDest = this.ctx.createMediaStreamDestination()
     this.master.connect(streamDest)
     this.unregisterCapture = registerAudioStream(streamDest.stream)
+    this.unregisterWake = onCaptureWake(() => this.resume())
 
     // shimmer reverb bus
     const convolver = this.ctx.createConvolver()
@@ -105,7 +111,7 @@ export class GlassAudio {
   }
 
   setMuted(muted: boolean) {
-    this.master.gain.setTargetAtTime(muted ? 0 : 0.5, this.ctx.currentTime, 0.1)
+    this.monitor.gain.setTargetAtTime(muted ? 0 : 0.5, this.ctx.currentTime, 0.1)
   }
 
   /** Pad level 0..1 — the ambient bed under everything. */
@@ -225,6 +231,8 @@ export class GlassAudio {
 
   dispose() {
     this.disposed = true
+    this.unregisterWake?.()
+    this.unregisterWake = null
     this.unregisterCapture?.()
     this.unregisterCapture = null
     for (const o of [...this.padOscs, ...this.lfos]) {

@@ -4,7 +4,7 @@ import { WebcamGate } from '@/shared/components/WebcamGate'
 import { SoundToggle } from '@/shared/components/SoundToggle'
 import type { ExperimentProps } from '@/shared/types'
 import { createHandLandmarker } from '@/shared/lib/mediapipe'
-import { registerAudioStream } from '@/shared/lib/audioCapture'
+import { onCaptureWake, registerAudioStream } from '@/shared/lib/audioCapture'
 
 // ── musical helpers ───────────────────────────────────────────
 // Scales across ~2 octaves, semitone offsets from a root.
@@ -241,6 +241,7 @@ const PRESET_PATTERN: Record<Track, boolean[]> = {
 class AudioEngine {
   ctx: AudioContext | null = null
   master: GainNode | null = null
+  monitor: GainNode | null = null
   drumBus: GainNode | null = null
   synthBus: GainNode | null = null
   pad: HarmonyPad | null = null
@@ -252,6 +253,7 @@ class AudioEngine {
   preset = SYNTHS[0]
   kit: KitId = '808'
   private unregisterCapture: (() => void) | null = null
+  private unregisterWake: (() => void) | null = null
 
   // sequencer
   playing = false
@@ -274,6 +276,8 @@ class AudioEngine {
       this.ctx = new AudioContext()
       this.master = this.ctx.createGain()
       this.master.gain.value = 0.9
+      this.monitor = this.ctx.createGain()
+      this.monitor.gain.value = 0.9
       this.compressor = this.ctx.createDynamicsCompressor()
       this.compressor.threshold.value = -18
       this.compressor.knee.value = 18
@@ -281,12 +285,13 @@ class AudioEngine {
       this.compressor.attack.value = 0.006
       this.compressor.release.value = 0.18
       this.master.connect(this.compressor)
-      this.compressor.connect(this.ctx.destination)
+      this.compressor.connect(this.monitor)
+      this.monitor.connect(this.ctx.destination)
 
-      // tap the master for the screen recorder
       const streamDest = this.ctx.createMediaStreamDestination()
       this.compressor.connect(streamDest)
       this.unregisterCapture = registerAudioStream(streamDest.stream)
+      this.unregisterWake = onCaptureWake(() => this.resume())
 
       this.drumBus = this.ctx.createGain()
       this.drumBus.gain.value = 0.9
@@ -328,7 +333,9 @@ class AudioEngine {
   setBpm(b: number) { this.bpm = b }
 
   setMuted(muted: boolean) {
-    if (this.ctx && this.master) this.master.gain.setTargetAtTime(muted ? 0 : 0.9, this.ctx.currentTime, 0.05)
+    if (this.ctx && this.monitor) {
+      this.monitor.gain.setTargetAtTime(muted ? 0 : 0.9, this.ctx.currentTime, 0.05)
+    }
   }
 
   /** hand-distance macro: 0..1 → delay wet mix + voice detune spread */
@@ -518,6 +525,8 @@ class AudioEngine {
 
   dispose() {
     this.stopSeq()
+    this.unregisterWake?.()
+    this.unregisterWake = null
     this.unregisterCapture?.()
     this.unregisterCapture = null
     this.voices.forEach((v) => v.dispose())
@@ -595,6 +604,10 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
       landmarkerRef.current = null
       engine.dispose()
     }
+  }, [])
+
+  useEffect(() => {
+    engineRef.current.resume()
   }, [])
 
   useEffect(() => { engineRef.current.setMuted(muted || paused) }, [muted, paused])

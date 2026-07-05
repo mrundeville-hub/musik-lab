@@ -1,19 +1,38 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { getCaptureAudioTracks } from '@/shared/lib/audioCapture'
+import { ensureCaptureAudioReady, getCaptureAudioTracks } from '@/shared/lib/audioCapture'
 
-function pickMimeType() {
-  // prefer webm/opus: Chrome's MediaRecorder reliably muxes an externally
-  // added audio track here, whereas video/mp4 often drops it (silent file).
-  // mp4 stays as a last resort for browsers without webm.
-  const candidates = [
+/** WebM+Opus muxes externally-added audio tracks reliably; MP4 often drops them. */
+function pickMimeType(hasAudio: boolean) {
+  const webmOpus = [
     'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp8,opus',
-    'video/webm',
-    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-    'video/mp4',
   ]
-  return candidates.find((t) => MediaRecorder.isTypeSupported(t)) ?? ''
+  if (hasAudio) {
+    const webm = webmOpus.find((t) => MediaRecorder.isTypeSupported(t))
+    if (webm) return webm
+    // Safari has no WebM — MP4 is the only container; warn in console.
+    const mp4 = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'].find((t) =>
+      MediaRecorder.isTypeSupported(t),
+    )
+    if (mp4) {
+      console.warn('[useRecorder] WebM unavailable — falling back to MP4; test audio in VLC')
+    }
+    return mp4 ?? ''
+  }
+  return (
+    [
+      ...webmOpus,
+      'video/webm',
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+      'video/mp4',
+    ].find((t) => MediaRecorder.isTypeSupported(t)) ?? ''
+  )
+}
+
+function recordingExtension(mimeType: string) {
+  if (mimeType.startsWith('video/mp4')) return 'mp4'
+  return 'webm'
 }
 
 // resolve the effective x/y scale of an element, covering both the CSS `scale`
@@ -127,6 +146,7 @@ export function useRecorder(filename: string) {
       }
 
       rafRef.current = requestAnimationFrame(draw)
+      ensureCaptureAudioReady()
       const stream = target.captureStream(60)
       // mix the experiment's live audio into the recording
       const audioTracks = getCaptureAudioTracks()
@@ -134,10 +154,11 @@ export function useRecorder(filename: string) {
       if (!audioTracks.length) {
         console.warn('[useRecorder] no audio track registered — recording will be silent')
       }
-      const mimeType = pickMimeType()
+      const mimeType = pickMimeType(audioTracks.length > 0)
       const recorder = new MediaRecorder(stream, {
         mimeType: mimeType || undefined,
         videoBitsPerSecond: 16_000_000,
+        ...(audioTracks.length > 0 ? { audioBitsPerSecond: 128_000 } : {}),
       })
       const chunks: Blob[] = []
 
@@ -150,7 +171,7 @@ export function useRecorder(filename: string) {
           console.warn('[useRecorder] no data captured — nothing to download')
           return
         }
-        const ext = mimeType.startsWith('video/mp4') ? 'mp4' : 'webm'
+        const ext = recordingExtension(mimeType)
         const blob = new Blob(chunks, { type: mimeType || 'video/webm' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')

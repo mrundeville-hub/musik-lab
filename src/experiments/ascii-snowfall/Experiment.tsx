@@ -4,7 +4,8 @@ import { WebcamGate } from '@/shared/components/WebcamGate'
 import { SoundToggle } from '@/shared/components/SoundToggle'
 import type { ExperimentProps } from '@/shared/types'
 import { createImageSegmenter } from '@/shared/lib/mediapipe'
-import { drawDimWebcam, drawLabel, resizeCanvas, TinyAudio } from '../_shared/asciiTools'
+import { drawDimWebcam, drawLabel, resizeCanvas } from '../_shared/asciiTools'
+import { useTinyAudio } from '@/shared/hooks/useTinyAudio'
 
 interface Letter {
   x: number
@@ -24,9 +25,8 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const segRef = useRef<ImageSegmenter | null>(null)
   const lettersRef = useRef<Letter[]>([])
-  const audioRef = useRef(new TinyAudio())
+  const { audioRef, muted, toggleMuted } = useTinyAudio(paused)
   const charIdx = useRef(0)
-  const [muted, setMuted] = useState(false)
   const [word, setWord] = useState('SNOW')
   const wordRef = useRef(word)
 
@@ -39,7 +39,6 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
 
   useEffect(() => {
     let alive = true
-    const audio = audioRef.current
     void createImageSegmenter().then((seg) => {
       if (alive) segRef.current = seg
       else seg.close()
@@ -47,11 +46,8 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
     return () => {
       alive = false
       segRef.current?.close()
-      audio.dispose()
     }
   }, [])
-
-  useEffect(() => audioRef.current.setMuted(muted || paused), [muted, paused])
 
   useEffect(() => {
     let raf = 0
@@ -212,7 +208,7 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
         </button>
       </div>
       <div className="absolute right-3 top-3">
-        <SoundToggle muted={muted} onToggle={() => setMuted((v) => !v)} />
+        <SoundToggle muted={muted} onToggle={toggleMuted} />
       </div>
     </div>
   )

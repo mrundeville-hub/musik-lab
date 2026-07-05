@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { FaceLandmarker, HandLandmarker } from '@mediapipe/tasks-vision'
 import type { ExperimentProps } from '@/shared/types'
 import { useCanvas2D } from '@/shared/hooks/useCanvas2D'
 import { useAnimationLoop } from '@/shared/hooks/useAnimationLoop'
 import { WebcamGate } from '@/shared/components/WebcamGate'
 import { SoundToggle } from '@/shared/components/SoundToggle'
+import { useTinyAudio } from '@/shared/hooks/useTinyAudio'
 import { createFaceLandmarker, createHandLandmarker } from '@/shared/lib/mediapipe'
-import { TinyAudio } from '../_shared/asciiTools'
 
 // MediaPipe hand landmark indices
 const THUMB_TIP = 4
@@ -142,8 +142,7 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
   const faceRef = useRef<FaceLandmarker | null>(null)
   const lastDetect = useRef(0)
   const gardenRef = useRef<Garden | null>(null)
-  const audioRef = useRef(new TinyAudio())
-  const [muted, setMuted] = useState(false)
+  const { audioRef, muted, toggleMuted } = useTinyAudio(paused)
   const pinchRef = useRef<{ x: number; y: number; dist: number } | null>(null)
   const breathRef = useRef<Breath | null>(null)
 
@@ -157,7 +156,6 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
 
   useEffect(() => {
     let alive = true
-    const audio = audioRef.current
     void Promise.all([createHandLandmarker(1), createFaceLandmarker()]).then(([handLm, faceLm]) => {
       if (alive) {
         lmRef.current = handLm
@@ -171,13 +169,8 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
       alive = false
       lmRef.current?.close()
       faceRef.current?.close()
-      audio.dispose()
     }
   }, [])
-
-  useEffect(() => {
-    audioRef.current.setMuted(muted || paused)
-  }, [muted, paused])
 
   useAnimationLoop((_elapsed, delta) => {
     const ctx = ctxRef.current
@@ -476,7 +469,7 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
         onPointerDown={() => audioRef.current.resume()}
       />
       <div className="absolute right-3 top-3">
-        <SoundToggle muted={muted} onToggle={() => setMuted((v) => !v)} />
+        <SoundToggle muted={muted} onToggle={toggleMuted} />
       </div>
     </div>
   )

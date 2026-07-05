@@ -1,4 +1,4 @@
-import { registerAudioStream } from '@/shared/lib/audioCapture'
+import { onCaptureWake, registerAudioStream } from '@/shared/lib/audioCapture'
 
 export interface StageSize {
   width: number
@@ -80,27 +80,47 @@ export function dist(a: Point, b: Point) {
 export class TinyAudio {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
+  private monitor: GainNode | null = null
   private muted = false
   private unregisterCapture: (() => void) | null = null
+  private unregisterWake: (() => void) | null = null
+
+  constructor() {
+    this.initGraph()
+    this.unregisterWake = onCaptureWake(() => this.resume())
+  }
+
+  private initGraph() {
+    if (this.ctx) return
+    this.ctx = new AudioContext()
+    this.master = this.ctx.createGain()
+    this.master.gain.value = 0.28
+    this.monitor = this.ctx.createGain()
+    this.monitor.gain.value = this.muted ? 0 : 0.28
+    this.master.connect(this.monitor)
+    this.monitor.connect(this.ctx.destination)
+    const streamDest = this.ctx.createMediaStreamDestination()
+    this.master.connect(streamDest)
+    this.unregisterCapture = registerAudioStream(streamDest.stream)
+    // quiet ambient bed so idle recordings aren't silent
+    const pad = this.ctx.createOscillator()
+    pad.type = 'sine'
+    pad.frequency.value = 196
+    const padGain = this.ctx.createGain()
+    padGain.gain.value = 0.014
+    pad.connect(padGain).connect(this.master!)
+    pad.start()
+  }
 
   resume() {
-    if (!this.ctx) {
-      this.ctx = new AudioContext()
-      this.master = this.ctx.createGain()
-      this.master.gain.value = this.muted ? 0 : 0.28
-      this.master.connect(this.ctx.destination)
-      // tap the master for the screen recorder
-      const streamDest = this.ctx.createMediaStreamDestination()
-      this.master.connect(streamDest)
-      this.unregisterCapture = registerAudioStream(streamDest.stream)
-    }
-    void this.ctx.resume()
+    this.initGraph()
+    void this.ctx!.resume()
   }
 
   setMuted(muted: boolean) {
     this.muted = muted
-    if (this.master && this.ctx) {
-      this.master.gain.setTargetAtTime(muted ? 0 : 0.28, this.ctx.currentTime, 0.05)
+    if (this.monitor && this.ctx) {
+      this.monitor.gain.setTargetAtTime(muted ? 0 : 0.28, this.ctx.currentTime, 0.05)
     }
   }
 
@@ -146,10 +166,13 @@ export class TinyAudio {
   }
 
   dispose() {
+    this.unregisterWake?.()
+    this.unregisterWake = null
     this.unregisterCapture?.()
     this.unregisterCapture = null
     void this.ctx?.close()
     this.ctx = null
     this.master = null
+    this.monitor = null
   }
 }
