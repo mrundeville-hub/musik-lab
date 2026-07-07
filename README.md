@@ -46,6 +46,17 @@ The `dist/` folder is static — deploy it to any static host (GitHub Pages,
 Netlify, Vercel, Cloudflare Pages, etc.). The site must be served over HTTPS for
 the camera to work in production.
 
+### Deploy
+
+SPA fallback is preconfigured (`public/_redirects` for Netlify/Cloudflare Pages,
+`vercel.json` for Vercel), so deep links like `/e/<slug>` work out of the box.
+
+```bash
+npx netlify deploy --prod --dir=dist        # Netlify
+npx vercel --prod                           # Vercel
+npx wrangler pages deploy dist              # Cloudflare Pages
+```
+
 ### Want a desktop app instead?
 
 If you'd rather run it as a native window (Electron) instead of in a browser:

@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { getExperiment } from '@/experiments/registry'
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import { ExperimentShell } from '@/shared/components/ExperimentShell'
 
 export function ExperimentPage() {
@@ -28,5 +29,9 @@ export function ExperimentPage() {
   }
 
   // key forces a full remount (and thus full cleanup) when switching experiments
-  return <ExperimentShell key={entry.metadata.slug} entry={entry} />
+  return (
+    <ErrorBoundary key={entry.metadata.slug}>
+      <ExperimentShell entry={entry} />
+    </ErrorBoundary>
+  )
 }
