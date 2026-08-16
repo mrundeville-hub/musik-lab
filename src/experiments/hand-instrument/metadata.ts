@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Hand Instrument',
+  emoji: '🎹',
+  blurb: 'Pinch a lead, open a palm for harmony.',
   slug: 'hand-instrument',
   description:
     'A hand-tracked performance instrument: pinch to play a lead, open your palm for a harmony pad, choose root/scale, and perform over a programmable soul-chord drum machine.',

@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Spirit Masks',
+  emoji: '🎭',
+  blurb: 'A trembling mask locks onto your face.',
   slug: 'spirit-masks',
   description:
     'A trembling 3D particle mask locks onto your face — ornate lacquer demon, cracked ghost, white oni, crash-test dummy, translucent skull, domino, luchador, a noh face covered in eyes, hammered gold with a long nose. Pinch thumb and index to dissolve into the next one.',

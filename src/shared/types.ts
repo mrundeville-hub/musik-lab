@@ -6,6 +6,10 @@ export interface ExperimentMetadata {
   title: string
   slug: string
   description: string
+  /** one emoji that reads as the experiment at a glance */
+  emoji?: string
+  /** one-line card copy; falls back to description if omitted */
+  blurb?: string
   year: number
   status: ExperimentStatus
   tags: string[]

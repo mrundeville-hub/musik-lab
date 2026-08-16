@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Garden',
+  emoji: '🌸',
+  blurb: 'Pinch to water a bed of ASCII flowers.',
   slug: 'ascii-garden',
   description:
     'A webcam scene rendered in ASCII where pinching your fingers drops water onto the ground. Drops feed procedural ASCII flowers that grow in stages above a strip of flickering grass.',

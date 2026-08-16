@@ -24,7 +24,7 @@ export function Window({
   className = '',
   children,
 }: {
-  title: string
+  title: ReactNode
   onClose?: () => void
   toolbar?: ReactNode
   footer?: ReactNode

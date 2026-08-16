@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Lace Curtain',
+  emoji: '🪟',
+  blurb: 'Part a Soviet lace curtain with two fingers.',
   slug: 'lace-curtain',
   description:
     'A lace tulle curtain — the kind that hung in every Soviet apartment window — drapes in front of your face, as if your face were the window. The cloth hangs and sways under simulated physics; raise your index fingers and pull the two halves apart to peek through, with soft glass tones for every part, close and billow.',

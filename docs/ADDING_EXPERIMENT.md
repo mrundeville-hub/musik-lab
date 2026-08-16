@@ -3,6 +3,7 @@
 1. Create `src/experiments/<slug>/` with three files:
 
    - `metadata.ts` — `export default { ... } satisfies ExperimentMetadata`
+     (include `emoji` + a one-line `blurb` for the home cards)
    - `Experiment.tsx` — default-export a component accepting `ExperimentProps` (`{ paused }`)
    - `index.ts` — `export { default } from './Experiment'`
 

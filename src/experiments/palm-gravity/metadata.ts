@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Palm Gravity',
+  emoji: '🕳️',
+  blurb: 'An open palm swallows quotes into a black hole.',
   slug: 'palm-gravity',
   description:
     'An open palm turns philosopher quotes into an event horizon over the live webcam. Make a fist and the orbiting letters settle into another thinker.',

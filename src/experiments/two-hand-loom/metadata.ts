@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Two-Hand Loom',
+  emoji: '🧵',
+  blurb: 'Pluck hanging threads and stitch them together.',
   slug: 'two-hand-loom',
   description:
     'A curtain of threads hanging across the webcam, parallel to your face: brush them with your fingers to pluck and bend each strand, then pinch one and drag it onto a neighbour to stitch the threads together into a growing pattern.',

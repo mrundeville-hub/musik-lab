@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Heart Pinch',
+  emoji: '💗',
+  blurb: 'Make a finger-heart and pour falling hearts.',
   slug: 'heart-pinch',
   description:
     'Hand tracking follows the index and thumb of both hands. Make a finger heart — cross the fingertips — and heart emoji stream out of the crossing point, tumbling down as rigid bodies until they fill the screen.',

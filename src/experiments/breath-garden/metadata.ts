@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Breath Garden',
+  emoji: '💨',
+  blurb: 'Hold a dandelion and blow the seeds away.',
   slug: 'breath-garden',
   description:
     'Pinch your index finger and thumb to hold an ASCII dandelion by the stem, then blow at it on camera and watch the white seeds fly away.',
