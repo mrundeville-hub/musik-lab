@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Flower Control',
+  emoji: '🌺',
+  blurb: 'Pinch to scrub a flower open and shut.',
   slug: 'flower-control',
   description:
     'A portrait camera piece where your right index-thumb distance scrubs a blooming flower and your left pinch switches the flower clip.',

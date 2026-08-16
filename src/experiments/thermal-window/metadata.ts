@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Thermal Window',
+  emoji: '🌡️',
+  blurb: 'Two pinches open a live thermal window.',
   slug: 'thermal-window',
   description:
     'A webcam piece where both index-thumb pairs open a live thermal rectangle inside the normal camera image.',

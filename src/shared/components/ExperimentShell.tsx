@@ -30,7 +30,12 @@ export function ExperimentShell({ entry }: { entry: ExperimentEntry }) {
   return (
     <div className="desktop grid min-h-dvh place-items-center p-4 sm:p-8">
       <Window
-        title={`${meta.title} — musik.lab`}
+        title={
+          <span className="inline-flex items-center gap-1.5">
+            <span aria-hidden>{meta.emoji ?? ''}</span>
+            {meta.title} — musik.lab
+          </span>
+        }
         onClose={() => navigate('/')}
         className="aqua-pop h-[min(88dvh,760px)] w-[min(95vw,1000px)]"
         bodyClassName="bg-[#1c1b1f] grid place-items-center p-4"

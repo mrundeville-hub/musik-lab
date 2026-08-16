@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Butterfly',
+  emoji: '🦋',
+  blurb: 'A lazy butterfly perches on your fingertip.',
   slug: 'butterfly',
   description:
     'A detailed ASCII butterfly drifts lazily across the screen. Show your index fingers and it slowly glides over and perches on the tip.',

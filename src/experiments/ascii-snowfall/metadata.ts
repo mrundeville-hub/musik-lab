@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Snowfall',
+  emoji: '❄️',
+  blurb: 'Typed letters settle on your silhouette.',
   slug: 'ascii-snowfall',
   description:
     'Letters of a word you type fall like snow and settle exactly on your silhouette. Move, and they get pushed around or tumble off.',

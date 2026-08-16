@@ -16,6 +16,9 @@
   "build": {
     "appId": "lab.musik.desktop",
     "productName": "musik.lab",
+    "directories": {
+      "output": "release"
+    },
     "files": [
       "dist/**/*",
       "electron/**/*",

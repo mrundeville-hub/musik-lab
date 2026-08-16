@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Eye Type',
+  emoji: '👁️',
+  blurb: 'Letters pour from your eyes and pile up.',
   slug: 'eye-type',
   description:
     'Face tracking finds your eyes and letters of a word pour out of them as rigid bodies — spinning, colliding and piling up at the bottom of the screen.',

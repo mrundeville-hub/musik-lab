@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Ripple',
+  emoji: '🌊',
+  blurb: 'Fingertips splash a live ASCII mirror.',
   slug: 'ascii-ripple',
   description:
     'A webcam mirror rendered as ASCII, with a wave-equation ripple field on top. Fingertips (hand tracking) or clicks throw energy into the field; characters brighten and refract along the wave gradient.',

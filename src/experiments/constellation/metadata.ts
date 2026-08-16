@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Constellation',
+  emoji: '✨',
+  blurb: 'Ten fingertips become a living night sky.',
   slug: 'constellation',
   description:
     'All ten fingertips become stars. Nearby fingers connect into living ASCII constellations over a darkened webcam sky.',
