@@ -39,17 +39,12 @@ function isShaka(hand: Lm[]) {
 }
 
 function isShy(a: Lm[], b: Lm[]) {
-  if (!fingerExtended(a, 8, 6, 5) || !fingerExtended(b, 8, 6, 5)) return false
-  return dist(a[8], b[8]) < 0.12
+  return isIndexUp(a) && isIndexUp(b) && dist(a[8], b[8]) < 0.12
 }
 
 function isPray(a: Lm[], b: Lm[]) {
-  // Palms facing-ish: wrists close, middle MCPs close, tips clustered
-  return (
-    dist(a[0], b[0]) < 0.18 &&
-    dist(a[9], b[9]) < 0.14 &&
-    dist(a[8], b[8]) < 0.16
-  )
+  if (!fingerExtended(a, 12, 10, 9) || !fingerExtended(b, 12, 10, 9)) return false
+  return dist(a[0], b[0]) < 0.18 && dist(a[9], b[9]) < 0.14 && dist(a[8], b[8]) < 0.16
 }
 
 const MOUTH_RADIUS = 0.09
