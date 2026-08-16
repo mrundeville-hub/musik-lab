@@ -7,6 +7,11 @@ import { Toolbar, ToolbarButton } from '@/shared/components/aqua/Toolbar'
 import { useRecorder } from '@/shared/hooks/useRecorder'
 import type { ExperimentEntry } from '@/shared/types'
 
+const PORTRAIT_ASPECT: Record<string, string> = {
+  'flower-control': '3/4',
+  'cat-gestures': '9/16',
+}
+
 export function ExperimentShell({ entry }: { entry: ExperimentEntry }) {
   const { metadata: meta, Component } = entry
   const navigate = useNavigate()
@@ -15,7 +20,14 @@ export function ExperimentShell({ entry }: { entry: ExperimentEntry }) {
   const [infoOpen, setInfoOpen] = useState(false)
   const stageRef = useRef<HTMLDivElement>(null)
   const { recording, seconds, start, stop } = useRecorder(meta.slug)
-  const isPortraitStage = meta.slug === 'flower-control'
+  const portraitAspect = PORTRAIT_ASPECT[meta.slug]
+  const isPortraitStage = Boolean(portraitAspect)
+  const portraitClass =
+    meta.slug === 'cat-gestures'
+      ? 'aspect-[9/16] max-w-[min(90%,calc((88dvh-8rem)*9/16))]'
+      : meta.slug === 'flower-control'
+        ? 'aspect-[3/4] max-w-[min(90%,calc((88dvh-8rem)*3/4))]'
+        : null
 
   const toggleRecording = useCallback(() => {
     if (recording) stop()
@@ -71,7 +83,7 @@ export function ExperimentShell({ entry }: { entry: ExperimentEntry }) {
           <>
             <span className="flex items-center gap-3">
               <FpsMeter paused={paused} />
-              <span>{meta.needsWebcam ? (isPortraitStage ? '3:4' : '4:3') : 'canvas · 4:3'}</span>
+              <span>{portraitAspect?.replace('/', ':') ?? (meta.needsWebcam ? '4:3' : 'canvas · 4:3')}</span>
             </span>
             <button
               onClick={toggleRecording}
@@ -90,8 +102,8 @@ export function ExperimentShell({ entry }: { entry: ExperimentEntry }) {
         <figure
           className={[
             'relative w-full self-center',
-            isPortraitStage
-              ? 'aspect-[3/4] max-w-[min(90%,calc((88dvh-8rem)*3/4))]'
+            isPortraitStage && portraitClass
+              ? portraitClass
               : 'aspect-[4/3] max-w-[min(96%,calc((88dvh-8rem)*4/3))]',
           ].join(' ')}
         >
