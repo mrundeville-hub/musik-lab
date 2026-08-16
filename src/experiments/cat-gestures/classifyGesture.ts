@@ -6,8 +6,8 @@ const dist = (a: Lm, b: Lm) => Math.hypot(a.x - b.x, a.y - b.y)
 function fingerExtended(hand: Lm[], tip: number, pip: number, mcp: number) {
   // Tip farther from wrist than PIP, and roughly "out"
   const wrist = hand[0]
-  return dist(hand[tip], wrist) > dist(hand[pip], wrist) * 0.94 &&
-    dist(hand[tip], hand[mcp]) > dist(hand[pip], hand[mcp]) * 0.85
+  return dist(hand[tip], wrist) > dist(hand[pip], wrist) * 1.08 &&
+    dist(hand[tip], hand[mcp]) > dist(hand[pip], hand[mcp]) * 0.95
 }
 
 function fingerCurled(hand: Lm[], tip: number, mcp: number) {
@@ -61,11 +61,13 @@ export function classifyGesture(hands: Lm[][], mouth: Lm | null): CatGesture | n
     if (isShy(a, b)) return 'shy'
     if (isPray(a, b)) return 'pray'
   }
-  for (const h of hands) {
-    if (isIndexUp(h)) {
-      if (mouth && dist(h[8], mouth) < MOUTH_RADIUS) return 'shush'
-      return 'pointUp'
+  if (mouth) {
+    for (const h of hands) {
+      if (isIndexUp(h) && dist(h[8], mouth) < MOUTH_RADIUS) return 'shush'
     }
+  }
+  for (const h of hands) {
+    if (isIndexUp(h)) return 'pointUp'
   }
   for (const h of hands) {
     if (isShaka(h)) return 'shaka'

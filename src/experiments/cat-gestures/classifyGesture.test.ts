@@ -25,12 +25,13 @@ function curledFist(): Lm[] {
 }
 
 function indexUp(awayFromMouth = true): Lm[] {
-  const tipY = awayFromMouth ? 0.15 : 0.42
+  const tipY = awayFromMouth ? 0.15 : 0.38
+  const pipY = awayFromMouth ? 0.4 : 0.48
   return hand({
     0: { x: 0.5, y: 0.75 },
     5: { x: 0.5, y: 0.55 },
-    6: { x: 0.5, y: 0.4 },
-    8: { x: 0.5, y: tipY }, // tip above PIP → extended
+    6: { x: 0.5, y: pipY },
+    8: { x: 0.5, y: tipY }, // tip above PIP (smaller y) → extended
     4: { x: 0.42, y: 0.55 }, // thumb not shaka-far
     12: { x: 0.5, y: 0.52 },
     10: { x: 0.5, y: 0.5 },
@@ -58,6 +59,11 @@ describe('classifyGesture', () => {
   it('detects shush when index tip near mouth', () => {
     const mouth = { x: 0.5, y: 0.42 }
     expect(classifyGesture([indexUp(false)], mouth)).toBe('shush')
+  })
+
+  it('prefers shush over pointUp when one hand points up far from mouth and another shushes', () => {
+    const mouth = { x: 0.5, y: 0.42 }
+    expect(classifyGesture([indexUp(true), indexUp(false)], mouth)).toBe('shush')
   })
 
   it('detects shy when two index tips are close', () => {
