@@ -12,6 +12,15 @@ import { MEMES } from './memes'
 const HOLD_FRAMES = 4
 const DETECT_INTERVAL_MS = 33
 
+const GESTURE_HINTS: Array<{ id: CatGesture; emoji: string }> = [
+  { id: 'pray', emoji: '🙏' },
+  { id: 'pointUp', emoji: '☝️' },
+  { id: 'shy', emoji: '👉👈' },
+  { id: 'fist', emoji: '👊' },
+  { id: 'shush', emoji: '🤫' },
+  { id: 'shaka', emoji: '🤙' },
+]
+
 function CatGesturesStage({ video, paused }: { video: HTMLVideoElement; paused: boolean }) {
   const handLandmarkerRef = useRef<HandLandmarker | null>(null)
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null)
@@ -133,6 +142,30 @@ function CatGesturesStage({ video, paused }: { video: HTMLVideoElement; paused: 
             muted
             className="h-full w-full -scale-x-100 object-cover"
           />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-2 pb-2 pt-6">
+            <div
+              className="flex items-center justify-center gap-1.5"
+              aria-label="available gestures"
+            >
+              {GESTURE_HINTS.map(({ id, emoji }) => {
+                const active = gesture === id
+                return (
+                  <span
+                    key={id}
+                    className={[
+                      'rounded-md px-1.5 py-0.5 text-[18px] leading-none transition',
+                      active
+                        ? 'scale-110 bg-white/25 ring-1 ring-white/60'
+                        : 'bg-black/25 opacity-80',
+                    ].join(' ')}
+                    aria-current={active ? 'true' : undefined}
+                  >
+                    {emoji}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
         </section>
       </div>
     </div>
