@@ -6,12 +6,14 @@ const dist = (a: Lm, b: Lm) => Math.hypot(a.x - b.x, a.y - b.y)
 function fingerExtended(hand: Lm[], tip: number, pip: number, mcp: number) {
   // Tip farther from wrist than PIP, and roughly "out"
   const wrist = hand[0]
-  return dist(hand[tip], wrist) > dist(hand[pip], wrist) * 1.08 &&
-    dist(hand[tip], hand[mcp]) > dist(hand[pip], hand[mcp]) * 0.95
+  return (
+    dist(hand[tip], wrist) > dist(hand[pip], wrist) * 1.02 &&
+    dist(hand[tip], hand[mcp]) > dist(hand[pip], hand[mcp]) * 0.88
+  )
 }
 
 function fingerCurled(hand: Lm[], tip: number, mcp: number) {
-  return dist(hand[tip], hand[mcp]) < dist(hand[0], hand[mcp]) * 0.55
+  return dist(hand[tip], hand[mcp]) < dist(hand[0], hand[mcp]) * 0.7
 }
 
 function isFist(hand: Lm[]) {
@@ -19,35 +21,36 @@ function isFist(hand: Lm[]) {
 }
 
 function isIndexUp(hand: Lm[]) {
+  // Index out; other fingers not extended (partial curl OK — more forgiving than strict curl).
   return (
     fingerExtended(hand, 8, 6, 5) &&
-    fingerCurled(hand, 12, 9) &&
-    fingerCurled(hand, 16, 13) &&
-    fingerCurled(hand, 20, 17)
+    !fingerExtended(hand, 12, 10, 9) &&
+    !fingerExtended(hand, 16, 14, 13) &&
+    !fingerExtended(hand, 20, 18, 17)
   )
 }
 
 function isShaka(hand: Lm[]) {
-  const thumbOut = dist(hand[4], hand[17]) > dist(hand[5], hand[17]) * 0.9
+  const thumbOut = dist(hand[4], hand[17]) > dist(hand[5], hand[17]) * 0.85
   return (
     thumbOut &&
     fingerExtended(hand, 20, 18, 17) &&
-    fingerCurled(hand, 8, 5) &&
-    fingerCurled(hand, 12, 9) &&
-    fingerCurled(hand, 16, 13)
+    !fingerExtended(hand, 8, 6, 5) &&
+    !fingerExtended(hand, 12, 10, 9) &&
+    !fingerExtended(hand, 16, 14, 13)
   )
 }
 
 function isShy(a: Lm[], b: Lm[]) {
-  return isIndexUp(a) && isIndexUp(b) && dist(a[8], b[8]) < 0.12
+  return isIndexUp(a) && isIndexUp(b) && dist(a[8], b[8]) < 0.16
 }
 
 function isPray(a: Lm[], b: Lm[]) {
   if (!fingerExtended(a, 12, 10, 9) || !fingerExtended(b, 12, 10, 9)) return false
-  return dist(a[0], b[0]) < 0.18 && dist(a[9], b[9]) < 0.14 && dist(a[8], b[8]) < 0.16
+  return dist(a[0], b[0]) < 0.22 && dist(a[9], b[9]) < 0.18 && dist(a[8], b[8]) < 0.2
 }
 
-const MOUTH_RADIUS = 0.09
+const MOUTH_RADIUS = 0.14
 
 export function classifyGesture(hands: Lm[][], mouth: Lm | null): CatGesture | null {
   if (hands.length === 0) return null
