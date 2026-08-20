@@ -156,16 +156,13 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
         const x = gx * CELL + CELL / 2
         const y = gy * CELL + CELL / 2
         const n = Math.sin(gx * 0.37 + t * 1.2 + w.yaw) * Math.cos(gy * 0.29 - t * 0.8)
-        let ch = ' '
-        let alpha = 0.35
+        let ch: string
         if (sun > 0.2 && n > 0.1 - sun * 0.4) {
           ch = SUN[(gx + gy + ((t * 3) | 0)) % SUN.length]
-          alpha = 0.35 + sun * 0.55
-          ctx.fillStyle = `rgba(255,230,120,${alpha})`
+          ctx.fillStyle = `rgba(255,230,120,${0.35 + sun * 0.55})`
         } else if (rainAmt > 0.15 && n < rainAmt * 0.5) {
           ch = CLOUD[(gx * 3 + gy) % CLOUD.length]
-          alpha = 0.25 + rainAmt * 0.4
-          ctx.fillStyle = `rgba(190,210,230,${alpha})`
+          ctx.fillStyle = `rgba(190,210,230,${0.25 + rainAmt * 0.4})`
         } else if (Math.abs(n) < 0.08) {
           ch = '·'
           ctx.fillStyle = 'rgba(160,180,200,0.2)'

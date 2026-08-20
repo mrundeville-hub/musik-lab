@@ -80,6 +80,15 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
     }
   }, [])
 
+  function insideMask(x: number, y: number, width: number, height: number) {
+    const m = maskRef.current
+    if (!m.data) return false
+    const mx = Math.floor((1 - x / width) * (m.w - 1))
+    const my = Math.floor((y / height) * (m.h - 1))
+    if (mx < 0 || my < 0 || mx >= m.w || my >= m.h) return false
+    return m.data[my * m.w + mx] > MASK_T
+  }
+
   useAnimationLoop((_elapsed, delta) => {
     const ctx = ctxRef.current
     if (!ctx) return
@@ -282,15 +291,6 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
       height - 16,
     )
   }, paused)
-
-  function insideMask(x: number, y: number, width: number, height: number) {
-    const m = maskRef.current
-    if (!m.data) return false
-    const mx = Math.floor((1 - x / width) * (m.w - 1))
-    const my = Math.floor((y / height) * (m.h - 1))
-    if (mx < 0 || my < 0 || mx >= m.w || my >= m.h) return false
-    return m.data[my * m.w + mx] > MASK_T
-  }
 
   return (
     <div className="relative size-full overflow-hidden bg-[#0a0c10]" onPointerDown={() => audioRef.current?.resume()}>
