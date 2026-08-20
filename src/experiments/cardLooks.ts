@@ -5,6 +5,7 @@ export const CARD_LOOK: Record<string, { from: string; to: string; ink?: string 
   'ascii-snowfall': { from: '#e8f2ff', to: '#8aa4c4' },
   'breath-garden': { from: '#e8f4d8', to: '#7a9a4a' },
   'butterfly': { from: '#f4e0c8', to: '#c4783a' },
+  'cat-gestures': { from: '#ffe8d0', to: '#e08a4a' },
   'constellation': { from: '#1a1e32', to: '#3a4a88', ink: '#e8eeff' },
   'eye-type': { from: '#f0e4d0', to: '#c4a06a' },
   'flower-control': { from: '#f8d0dc', to: '#d45a7a' },

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { experiments, getExperiment } from './registry'
+import { CARD_LOOK } from './cardLooks'
 import type { ExperimentStatus } from '@/shared/types'
 
 const STATUSES = new Set<ExperimentStatus>([
@@ -30,6 +31,17 @@ describe('experiments registry', () => {
       expect(Array.isArray(m.tags)).toBe(true)
       expect(Array.isArray(m.technologies)).toBe(true)
       expect(typeof Component).toBe('object') // LazyExoticComponent
+    }
+  })
+
+  // cat-gestures once shipped with none of these, so its home card rendered as a
+  // grey placeholder among 31 tinted ones. The registry glob can't catch that —
+  // CARD_LOOK is a hand-curated map the docs used to not mention.
+  it('gives every experiment a home card: emoji, blurb and tint', () => {
+    for (const { metadata: m } of experiments) {
+      expect(m.emoji, `${m.slug} has no emoji`).toBeTruthy()
+      expect(m.blurb?.trim(), `${m.slug} has no blurb`).toBeTruthy()
+      expect(CARD_LOOK[m.slug], `${m.slug} is missing from cardLooks.ts`).toBeDefined()
     }
   })
 

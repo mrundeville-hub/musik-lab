@@ -77,22 +77,38 @@ yours to change. Adding a new experiment takes one folder; see
 
 ## Experiments
 
-- **Cat Gestures** (`/e/cat-gestures`) — show a hand gesture, get the matching cat meme in a 9:16 stack
-- **Lace Curtain** (`/e/lace-curtain`) — a Soviet-apartment tulle curtain over your face; pull it apart with your index fingers
-- **Two-Hand Loom** (`/e/two-hand-loom`) — pluck hanging threads and pinch-drag them into a stitched pattern
-- **Hand Instrument** (`/e/hand-instrument`) — pinch to play a lead, open palm for a pad, over a programmable drum machine
-- **Thermal Window** (`/e/thermal-window`) — both index-thumb pairs open a live thermal rectangle inside the normal image
-- **Flower Control** (`/e/flower-control`) — right-hand distance scrubs a blooming flower, left pinch switches the clip
-- **Palm Gravity** (`/e/palm-gravity`) — an open palm bends philosopher quotes into an event horizon; a fist recomposes them
-- **Heart Pinch** (`/e/heart-pinch`) — make a finger heart and heart emoji pour out as rigid bodies
-- **Snowfall** (`/e/ascii-snowfall`) — letters of a word you type fall like snow and settle on your silhouette
-- **Spirit Masks** (`/e/spirit-masks`) — face-tracked particle masks with hand-gesture switching
-- **Eye Type** (`/e/eye-type`) — face tracking finds your eyes and emits colliding letters
-- **Ripple** (`/e/ascii-ripple`) — webcam ASCII mirror with fingertip-triggered ripples
-- **Garden** (`/e/ascii-garden`) — pinch gestures grow procedural ASCII flowers
-- **Breath Garden** (`/e/breath-garden`) — hand-gesture dandelion interaction
-- **Constellation** (`/e/constellation`) — fingertips become stars connected by ASCII lines
-- **Butterfly** (`/e/butterfly`) — procedural ASCII butterfly with generative glass audio
+- **ASCII Forecast** (`/e/ascii-forecast`) — your face becomes a live ASCII weather map
+- **Garden** (`/e/ascii-garden`) — pinch to water a bed of ASCII flowers
+- **Ripple** (`/e/ascii-ripple`) — fingertips splash a live ASCII mirror
+- **Snowfall** (`/e/ascii-snowfall`) — typed letters settle on your silhouette
+- **Breath Garden** (`/e/breath-garden`) — hold a dandelion and blow the seeds away
+- **Butterfly** (`/e/butterfly`) — a lazy butterfly perches on your fingertip
+- **Cat Gestures** (`/e/cat-gestures`) — show a gesture, get the matching cat meme
+- **Choir Hands** (`/e/choir-hands`) — each fingertip is a voice in a glass choir
+- **Constellation** (`/e/constellation`) — ten fingertips become a living night sky
+- **CRT Snow** (`/e/crt-snow`) — your webcam through a dying CRT
+- **Eye Type** (`/e/eye-type`) — letters pour from your eyes and pile up
+- **Flower Control** (`/e/flower-control`) — pinch to scrub a flower open and shut
+- **Foggy Pane** (`/e/foggy-pane`) — breathe fog onto the glass, then wipe it clear
+- **Hand Instrument** (`/e/hand-instrument`) — pinch a lead, open a palm for harmony
+- **Heart Pinch** (`/e/heart-pinch`) — make a finger-heart and pour falling hearts
+- **Iris Kaleidoscope** (`/e/iris-kaleidoscope`) — your pupils become kaleidoscope hubs
+- **Lace Curtain** (`/e/lace-curtain`) — part a Soviet lace curtain with two fingers
+- **Match Light** (`/e/match-light`) — strike a match. The rest of the room goes dark
+- **Mercury Face** (`/e/mercury-face`) — your silhouette fills with liquid metal
+- **Mouth Aquarium** (`/e/mouth-aquarium`) — open your mouth and ASCII fish swim out
+- **Orbit Loom** (`/e/orbit-loom`) — fingertips weave elastic orbital springs
+- **Palm Gravity** (`/e/palm-gravity`) — an open palm swallows quotes into a black hole
+- **Paper Airplane** (`/e/paper-airplane`) — fold a plane from your face and flick it
+- **Radio Dial** (`/e/radio-dial`) — rotate an open palm to tune glass stations
+- **Shadow Twin** (`/e/shadow-twin`) — your shadow lags — and sometimes walks off
+- **Soap Film** (`/e/soap-film`) — stretch a rainbow film until it pops
+- **Spirit Masks** (`/e/spirit-masks`) — a trembling mask locks onto your face
+- **String Between Us** (`/e/string-between`) — a glass string rings between two index fingers
+- **Subtitle Body** (`/e/subtitle-body`) — captions crawl your silhouette like burned-in text
+- **Thermal Window** (`/e/thermal-window`) — two pinches open a live thermal window
+- **Two-Hand Loom** (`/e/two-hand-loom`) — pluck hanging threads and stitch them together
+- **Typewriter Gaze** (`/e/typewriter-gaze`) — look to type. Blink for space
 
 ## Project structure
 
@@ -195,22 +211,38 @@ electron-builder и настроен под macOS.
 
 ### Эксперименты
 
-- **Cat Gestures** (`/e/cat-gestures`) — показываешь жест рукой, получаешь подходящий кото-мем в вертикали 9:16
-- **Lace Curtain** (`/e/lace-curtain`) — тюлевая занавеска из советской квартиры поверх лица, раздвигается указательными пальцами
-- **Two-Hand Loom** (`/e/two-hand-loom`) — щиплешь висящие нити и щипком стягиваешь их в узор
-- **Hand Instrument** (`/e/hand-instrument`) — щипок играет лид, раскрытая ладонь — пэд, поверх программируемой драм-машины
-- **Thermal Window** (`/e/thermal-window`) — обе пары «указательный+большой» открывают живое термо-окно внутри обычной картинки
-- **Flower Control** (`/e/flower-control`) — правая рука прокручивает раскрытие цветка, левый щипок меняет клип
-- **Palm Gravity** (`/e/palm-gravity`) — раскрытая ладонь сворачивает цитаты философов в горизонт событий, кулак пересобирает их
-- **Heart Pinch** (`/e/heart-pinch`) — сложи пальцами сердечко, и сердечки сыплются физическими телами
-- **Snowfall** (`/e/ascii-snowfall`) — буквы набранного слова падают снегом и ложатся на твой силуэт
-- **Spirit Masks** (`/e/spirit-masks`) — маски из частиц по лицу, переключение жестами руки
-- **Eye Type** (`/e/eye-type`) — трекинг лица находит глаза и сыпет сталкивающиеся буквы
-- **Ripple** (`/e/ascii-ripple`) — ASCII-зеркало с камеры, рябь от кончиков пальцев
-- **Garden** (`/e/ascii-garden`) — щипок пальцами выращивает процедурные ASCII-цветы
-- **Breath Garden** (`/e/breath-garden`) — взаимодействие с одуванчиком жестами
-- **Constellation** (`/e/constellation`) — кончики пальцев становятся звёздами, соединёнными ASCII-линиями
-- **Butterfly** (`/e/butterfly`) — процедурная ASCII-бабочка с генеративным «стеклянным» звуком
+- **ASCII Forecast** (`/e/ascii-forecast`) — твоё лицо становится живой ASCII-картой погоды
+- **Garden** (`/e/ascii-garden`) — щипок поливает клумбу ASCII-цветов
+- **Ripple** (`/e/ascii-ripple`) — кончики пальцев плещут по живому ASCII-зеркалу
+- **Snowfall** (`/e/ascii-snowfall`) — набранные буквы ложатся на твой силуэт
+- **Breath Garden** (`/e/breath-garden`) — держи одуванчик и сдуй с него семена
+- **Butterfly** (`/e/butterfly`) — ленивая бабочка садится на кончик пальца
+- **Cat Gestures** (`/e/cat-gestures`) — показываешь жест — получаешь подходящий кото-мем
+- **Choir Hands** (`/e/choir-hands`) — каждый кончик пальца — голос в стеклянном хоре
+- **Constellation** (`/e/constellation`) — десять пальцев складываются в живое ночное небо
+- **CRT Snow** (`/e/crt-snow`) — твоя камера через умирающий кинескоп
+- **Eye Type** (`/e/eye-type`) — буквы сыплются из глаз и копятся внизу
+- **Flower Control** (`/e/flower-control`) — щипком прокручиваешь раскрытие цветка
+- **Foggy Pane** (`/e/foggy-pane`) — подыши на стекло, потом протри его
+- **Hand Instrument** (`/e/hand-instrument`) — щипок играет лид, раскрытая ладонь — гармонию
+- **Heart Pinch** (`/e/heart-pinch`) — сложи сердечко пальцами и высыпь дождь сердец
+- **Iris Kaleidoscope** (`/e/iris-kaleidoscope`) — зрачки становятся центрами калейдоскопа
+- **Lace Curtain** (`/e/lace-curtain`) — раздвинь двумя пальцами советскую тюль
+- **Match Light** (`/e/match-light`) — чиркни спичкой — остальная комната гаснет
+- **Mercury Face** (`/e/mercury-face`) — твой силуэт заливается жидким металлом
+- **Mouth Aquarium** (`/e/mouth-aquarium`) — открой рот, и оттуда выплывают ASCII-рыбы
+- **Orbit Loom** (`/e/orbit-loom`) — пальцы плетут упругие орбитальные пружины
+- **Palm Gravity** (`/e/palm-gravity`) — раскрытая ладонь затягивает цитаты в чёрную дыру
+- **Paper Airplane** (`/e/paper-airplane`) — сложи самолётик из своего лица и запусти его
+- **Radio Dial** (`/e/radio-dial`) — поворачивай ладонь, настраивая стеклянные станции
+- **Shadow Twin** (`/e/shadow-twin`) — тень отстаёт — и иногда уходит сама
+- **Soap Film** (`/e/soap-film`) — растягивай радужную плёнку, пока не лопнет
+- **Spirit Masks** (`/e/spirit-masks`) — дрожащая маска цепляется за твоё лицо
+- **String Between Us** (`/e/string-between`) — между двумя указательными звенит стеклянная струна
+- **Subtitle Body** (`/e/subtitle-body`) — субтитры ползут по силуэту, как вжжённый текст
+- **Thermal Window** (`/e/thermal-window`) — два щипка открывают живое термо-окно
+- **Two-Hand Loom** (`/e/two-hand-loom`) — щипли висящие нити и стягивай их в узор
+- **Typewriter Gaze** (`/e/typewriter-gaze`) — печатай взглядом. Моргни — пробел
 
 ### Запись
 

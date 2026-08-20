@@ -7,9 +7,22 @@
    - `Experiment.tsx` — default-export a component accepting `ExperimentProps` (`{ paused }`)
    - `index.ts` — `export { default } from './Experiment'`
 
-2. That's it. The registry (`src/experiments/registry.ts`) picks the folder up
+2. Add a card tint to `src/experiments/cardLooks.ts`, keyed by the same slug:
+
+   ```ts
+   'your-slug': { from: '#ffe8d0', to: '#e08a4a' },  // add `ink` for dark tints
+   ```
+
+   This is the one step the registry can't do for you. `CARD_LOOK` is a
+   hand-curated map, so a missing entry falls back to grey `#eee → #ccc` and your
+   experiment reads as a placeholder next to the tinted ones. `registry.test.ts`
+   fails if you forget it — or `emoji`, or `blurb`.
+
+3. That's it. The registry (`src/experiments/registry.ts`) picks the folder up
    automatically via `import.meta.glob`; the home page and `/e/<slug>` route appear
    without touching shell code. Component code is lazy-loaded only when opened.
+
+   Run `npm test` to confirm the metadata contract holds.
 
 ## Rules
 
@@ -33,3 +46,4 @@
 - [ ] resize + fullscreen keep correct proportions/DPR
 - [ ] back to home → no console errors, camera light off, CPU idle
 - [ ] usable on a narrow viewport
+- [ ] home card shows your emoji on a tinted (not grey) background

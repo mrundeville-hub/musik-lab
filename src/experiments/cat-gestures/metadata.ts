@@ -2,6 +2,8 @@ import type { ExperimentMetadata } from '@/shared/types'
 
 export default {
   title: 'Cat Gestures',
+  emoji: '🐱',
+  blurb: 'Show a gesture, get the matching cat meme.',
   slug: 'cat-gestures',
   description:
     'Show a hand gesture to the camera and get the matching cat meme. Portrait 9:16 stack: meme on top, live webcam strip below.',
