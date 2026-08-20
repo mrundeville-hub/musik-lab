@@ -77,6 +77,15 @@ yours to change. Adding a new experiment takes one folder; see
 
 ## Experiments
 
+- **Cat Gestures** (`/e/cat-gestures`) — show a hand gesture, get the matching cat meme in a 9:16 stack
+- **Lace Curtain** (`/e/lace-curtain`) — a Soviet-apartment tulle curtain over your face; pull it apart with your index fingers
+- **Two-Hand Loom** (`/e/two-hand-loom`) — pluck hanging threads and pinch-drag them into a stitched pattern
+- **Hand Instrument** (`/e/hand-instrument`) — pinch to play a lead, open palm for a pad, over a programmable drum machine
+- **Thermal Window** (`/e/thermal-window`) — both index-thumb pairs open a live thermal rectangle inside the normal image
+- **Flower Control** (`/e/flower-control`) — right-hand distance scrubs a blooming flower, left pinch switches the clip
+- **Palm Gravity** (`/e/palm-gravity`) — an open palm bends philosopher quotes into an event horizon; a fist recomposes them
+- **Heart Pinch** (`/e/heart-pinch`) — make a finger heart and heart emoji pour out as rigid bodies
+- **Snowfall** (`/e/ascii-snowfall`) — letters of a word you type fall like snow and settle on your silhouette
 - **Spirit Masks** (`/e/spirit-masks`) — face-tracked particle masks with hand-gesture switching
 - **Eye Type** (`/e/eye-type`) — face tracking finds your eyes and emits colliding letters
 - **Ripple** (`/e/ascii-ripple`) — webcam ASCII mirror with fingertip-triggered ripples
@@ -186,6 +195,15 @@ electron-builder и настроен под macOS.
 
 ### Эксперименты
 
+- **Cat Gestures** (`/e/cat-gestures`) — показываешь жест рукой, получаешь подходящий кото-мем в вертикали 9:16
+- **Lace Curtain** (`/e/lace-curtain`) — тюлевая занавеска из советской квартиры поверх лица, раздвигается указательными пальцами
+- **Two-Hand Loom** (`/e/two-hand-loom`) — щиплешь висящие нити и щипком стягиваешь их в узор
+- **Hand Instrument** (`/e/hand-instrument`) — щипок играет лид, раскрытая ладонь — пэд, поверх программируемой драм-машины
+- **Thermal Window** (`/e/thermal-window`) — обе пары «указательный+большой» открывают живое термо-окно внутри обычной картинки
+- **Flower Control** (`/e/flower-control`) — правая рука прокручивает раскрытие цветка, левый щипок меняет клип
+- **Palm Gravity** (`/e/palm-gravity`) — раскрытая ладонь сворачивает цитаты философов в горизонт событий, кулак пересобирает их
+- **Heart Pinch** (`/e/heart-pinch`) — сложи пальцами сердечко, и сердечки сыплются физическими телами
+- **Snowfall** (`/e/ascii-snowfall`) — буквы набранного слова падают снегом и ложатся на твой силуэт
 - **Spirit Masks** (`/e/spirit-masks`) — маски из частиц по лицу, переключение жестами руки
 - **Eye Type** (`/e/eye-type`) — трекинг лица находит глаза и сыпет сталкивающиеся буквы
 - **Ripple** (`/e/ascii-ripple`) — ASCII-зеркало с камеры, рябь от кончиков пальцев

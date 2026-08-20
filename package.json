@@ -11,6 +11,7 @@
     "desktop": "npm run build:desktop && electron .",
     "desktop:build": "npm run build:desktop && electron-builder --mac",
     "lint": "eslint .",
+    "test": "vitest run",
     "preview": "vite preview"
   },
   "build": {
@@ -60,6 +61,7 @@
     "prettier": "^3.8.4",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "^4.1.10"
   }
 }
