@@ -25,7 +25,10 @@ async function getFileset() {
 }
 
 /** Loads a HandLandmarker in VIDEO mode. */
-export async function createHandLandmarker(numHands = 2) {
+export async function createHandLandmarker(
+  numHands = 2,
+  opts?: { minHandDetectionConfidence?: number; minTrackingConfidence?: number },
+) {
   return HandLandmarker.createFromOptions(await getFileset(), {
     baseOptions: {
       modelAssetPath: MODELS.hand,
@@ -33,8 +36,8 @@ export async function createHandLandmarker(numHands = 2) {
     },
     runningMode: 'VIDEO',
     numHands,
-    minHandDetectionConfidence: 0.55,
-    minTrackingConfidence: 0.5,
+    minHandDetectionConfidence: opts?.minHandDetectionConfidence ?? 0.55,
+    minTrackingConfidence: opts?.minTrackingConfidence ?? 0.5,
   })
 }
 

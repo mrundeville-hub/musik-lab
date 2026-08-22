@@ -9,8 +9,8 @@ import { classifyGesture } from './classifyGesture'
 import type { CatGesture, Lm } from './classifyGesture'
 import { MEMES } from './memes'
 
-const HOLD_FRAMES = 4
-const DETECT_INTERVAL_MS = 33
+const HOLD_FRAMES = 2
+const DETECT_INTERVAL_MS = 16
 
 const GESTURE_HINTS: Array<{ id: CatGesture; emoji: string }> = [
   { id: 'pray', emoji: '🙏' },
@@ -43,7 +43,10 @@ function CatGesturesStage({ video, paused }: { video: HTMLVideoElement; paused: 
 
     void (async () => {
       try {
-        handLandmarker = await createHandLandmarker(2)
+        handLandmarker = await createHandLandmarker(2, {
+          minHandDetectionConfidence: 0.4,
+          minTrackingConfidence: 0.35,
+        })
         faceLandmarker = await createFaceLandmarker()
         if (cancelled) return
         handLandmarkerRef.current = handLandmarker
