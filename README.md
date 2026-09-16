@@ -100,6 +100,7 @@ yours to change. Adding a new experiment takes one folder; see
 - **Orbit Loom** (`/e/orbit-loom`) — fingertips weave elastic orbital springs
 - **Palm Gravity** (`/e/palm-gravity`) — an open palm swallows quotes into a black hole
 - **Paper Airplane** (`/e/paper-airplane`) — fold a plane from your face and flick it
+- **Pixel Cigarette** (`/e/pixel-cigarette`) — pinch a white pixel cigarette, inhale, and exhale pixel smoke
 - **Radio Dial** (`/e/radio-dial`) — rotate an open palm to tune glass stations
 - **Shadow Twin** (`/e/shadow-twin`) — your shadow lags — and sometimes walks off
 - **Soap Film** (`/e/soap-film`) — stretch a rainbow film until it pops
@@ -234,6 +235,7 @@ electron-builder и настроен под macOS.
 - **Orbit Loom** (`/e/orbit-loom`) — пальцы плетут упругие орбитальные пружины
 - **Palm Gravity** (`/e/palm-gravity`) — раскрытая ладонь затягивает цитаты в чёрную дыру
 - **Paper Airplane** (`/e/paper-airplane`) — сложи самолётик из своего лица и запусти его
+- **Pixel Cigarette** (`/e/pixel-cigarette`) — щипком держи белую пиксельную сигарету, затянись и выдохни пиксельный дым
 - **Radio Dial** (`/e/radio-dial`) — поворачивай ладонь, настраивая стеклянные станции
 - **Shadow Twin** (`/e/shadow-twin`) — тень отстаёт — и иногда уходит сама
 - **Soap Film** (`/e/soap-film`) — растягивай радужную плёнку, пока не лопнет

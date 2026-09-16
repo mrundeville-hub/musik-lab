@@ -1,22 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { ensureCaptureAudioReady, getCaptureAudioTracks } from '@/shared/lib/audioCapture'
+import {
+  ensureCaptureAudioReady,
+  getCaptureAudioTracks,
+} from '@/shared/lib/audioCapture'
 
 /** WebM+Opus muxes externally-added audio tracks reliably; MP4 often drops them. */
 function pickMimeType(hasAudio: boolean) {
-  const webmOpus = [
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-  ]
+  const webmOpus = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus']
   if (hasAudio) {
     const webm = webmOpus.find((t) => MediaRecorder.isTypeSupported(t))
     if (webm) return webm
     // Safari has no WebM — MP4 is the only container; warn in console.
-    const mp4 = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'].find((t) =>
-      MediaRecorder.isTypeSupported(t),
+    const mp4 = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'].find(
+      (t) => MediaRecorder.isTypeSupported(t),
     )
     if (mp4) {
-      console.warn('[useRecorder] WebM unavailable — falling back to MP4; test audio in VLC')
+      console.warn(
+        '[useRecorder] WebM unavailable — falling back to MP4; test audio in VLC',
+      )
     }
     return mp4 ?? ''
   }
@@ -55,10 +57,15 @@ function readScale(style: CSSStyleDeclaration) {
   return { x: 1, y: 1 }
 }
 
-// intrinsic pixel size of a video/canvas source, used for object-fit: cover crop math
-function sourceSize(el: HTMLVideoElement | HTMLCanvasElement) {
+// intrinsic pixel size of a video/canvas/image source, used for object-fit: cover crop math
+function sourceSize(
+  el: HTMLVideoElement | HTMLCanvasElement | HTMLImageElement,
+) {
   if (el instanceof HTMLVideoElement) {
     return { w: el.videoWidth, h: el.videoHeight }
+  }
+  if (el instanceof HTMLImageElement) {
+    return { w: el.naturalWidth, h: el.naturalHeight }
   }
   return { w: el.width, h: el.height }
 }
@@ -100,11 +107,23 @@ export function useRecorder(filename: string) {
         ctx.fillStyle = '#0a0a0b'
         ctx.fillRect(0, 0, rect.width, rect.height)
 
-        const layers = stage.querySelectorAll<HTMLVideoElement | HTMLCanvasElement>('video, canvas')
+        const layers = stage.querySelectorAll<
+          HTMLVideoElement | HTMLCanvasElement | HTMLImageElement
+        >('video, canvas, img')
         for (const el of layers) {
-          if (el instanceof HTMLVideoElement && (el.readyState < 2 || el.hidden)) continue
+          if (
+            el instanceof HTMLVideoElement &&
+            (el.readyState < 2 || el.hidden)
+          )
+            continue
+          if (
+            el instanceof HTMLImageElement &&
+            (!el.complete || el.naturalWidth === 0)
+          )
+            continue
           const style = getComputedStyle(el)
-          if (style.display === 'none' || style.visibility === 'hidden') continue
+          if (style.display === 'none' || style.visibility === 'hidden')
+            continue
 
           const box = el.getBoundingClientRect()
           const x = box.left - rect.left
@@ -152,7 +171,9 @@ export function useRecorder(filename: string) {
       const audioTracks = getCaptureAudioTracks()
       for (const track of audioTracks) stream.addTrack(track)
       if (!audioTracks.length) {
-        console.warn('[useRecorder] no audio track registered — recording will be silent')
+        console.warn(
+          '[useRecorder] no audio track registered — recording will be silent',
+        )
       }
       const mimeType = pickMimeType(audioTracks.length > 0)
       const recorder = new MediaRecorder(stream, {

@@ -9,7 +9,8 @@ import { classifyGesture } from './classifyGesture'
 import type { CatGesture, Lm } from './classifyGesture'
 import { MEMES } from './memes'
 
-const HOLD_FRAMES = 2
+/** a candidate must win for this long before it replaces the shown meme — kills flicker */
+const HOLD_MS = 250
 const DETECT_INTERVAL_MS = 16
 
 const GESTURE_HINTS: Array<{ id: CatGesture; emoji: string }> = [
@@ -26,7 +27,7 @@ function CatGesturesStage({ video, paused }: { video: HTMLVideoElement; paused: 
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null)
   const committedRef = useRef<CatGesture | null>(null)
   const pendingRef = useRef<CatGesture | null>(null)
-  const streakRef = useRef(0)
+  const pendingSinceRef = useRef(0)
   const [gesture, setGesture] = useState<CatGesture | null>(null)
   const [ready, setReady] = useState(false)
 
@@ -100,15 +101,14 @@ function CatGesturesStage({ video, paused }: { video: HTMLVideoElement; paused: 
 
       if (!label) {
         pendingRef.current = null
-        streakRef.current = 0
         return
       }
-      if (label === pendingRef.current) streakRef.current += 1
-      else {
+      if (label !== pendingRef.current) {
         pendingRef.current = label
-        streakRef.current = 1
+        pendingSinceRef.current = now
+        return
       }
-      if (streakRef.current >= HOLD_FRAMES && label !== committedRef.current) {
+      if (now - pendingSinceRef.current >= HOLD_MS && label !== committedRef.current) {
         committedRef.current = label
         setGesture(label)
       }

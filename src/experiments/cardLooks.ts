@@ -28,6 +28,7 @@ export const CARD_LOOK: Record<string, { from: string; to: string; ink?: string 
   'typewriter-gaze': { from: '#efe6d4', to: '#8a7048' },
   'radio-dial': { from: '#2a2418', to: '#c49030', ink: '#fff0c8' },
   'paper-airplane': { from: '#e8f0f8', to: '#6a90b8' },
+  'pixel-cigarette': { from: '#f4f6ee', to: '#d88958' },
   'ascii-forecast': { from: '#c8e0f8', to: '#3a78c0' },
   'crt-snow': { from: '#0a1810', to: '#30a050', ink: '#c8ffd0' },
   'orbit-loom': { from: '#101828', to: '#40b8e0', ink: '#e0f8ff' },

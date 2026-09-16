@@ -15,5 +15,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      - run: npm test
       # ponytail: build runs `tsc -b` first, so this is the typecheck too
       - run: npm run build
