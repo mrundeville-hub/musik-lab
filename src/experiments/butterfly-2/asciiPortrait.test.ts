@@ -59,5 +59,6 @@ describe('ASCII portrait processing', () => {
     expect(transitionRadius('revealing', 700, 700, 500)).toBe(500)
     expect(transitionRadius('hiding', 0, 700, 500)).toBe(500)
     expect(transitionRadius('hiding', 700, 700, 500)).toBe(0)
+    expect(transitionRadius('hiding', 0, 700, 500, 125)).toBe(125)
   })
 })

@@ -83,9 +83,11 @@ export function transitionRadius(
   elapsed: number,
   duration: number,
   maxRadius: number,
+  startRadius = mode === 'revealing' ? 0 : maxRadius,
 ) {
   const t = clamp01(elapsed / duration)
   const eased =
     t < 0.5 ? 4 * t * t * t : 1 - ((-2 * t + 2) ** 3) / 2
-  return maxRadius * (mode === 'revealing' ? eased : 1 - eased)
+  const targetRadius = mode === 'revealing' ? maxRadius : 0
+  return startRadius + (targetRadius - startRadius) * eased
 }

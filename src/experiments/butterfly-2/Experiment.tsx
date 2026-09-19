@@ -11,6 +11,16 @@ import { SoundToggle } from '@/shared/components/SoundToggle'
 import { drawDimWebcam } from '../_shared/asciiTools'
 import type { Cell } from './geometry'
 import { CELL_H, CELL_W, buildCells, clamp01 } from './geometry'
+import {
+  ASCII_RAMP,
+  computeLuminance,
+  edgeStrength,
+  glyphIndex,
+  maxCornerDistance,
+  normalizeLuminance,
+  transitionRadius,
+  waveCoverage,
+} from './asciiPortrait'
 
 // ── constants ──────────────────────────────────────────────────
 const INDEX_TIP = 8          // MediaPipe landmark: index fingertip
@@ -19,12 +29,128 @@ const PERCH_DIST = 22        // px — snaps to finger when this close
 const FLOAT_SPEED = 0.007    // radians/frame for idle drift
 const WING_SPEED_FLOAT = 4.8 // radians/s while flying
 const WING_SPEED_PERCH = 1.1 // radians/s while perched
+const ASCII_CELL_W = 7
+const ASCII_CELL_H = 12
+const WAVE_DURATION = 700
+const WAVE_FEATHER = 80
 
 // ── monochrome density → grey ─────────────────────────────────
 // dense core → near-white, sparse edge → mid-grey
 function grey(v: number) {
   const l = Math.round(90 + 154 * clamp01(v))
   return `rgb(${l},${l},${l})`
+}
+
+type VisualMode = 'photo' | 'revealing' | 'ascii' | 'hiding'
+
+interface WaveState {
+  mode: VisualMode
+  originX: number
+  originY: number
+  startedAt: number
+  startRadius: number
+  radius: number
+}
+
+const GREEN_PALETTE = [
+  '#0a3c0d',
+  '#0c6410',
+  '#0f8d12',
+  '#14b614',
+  '#1bdc14',
+  '#39ff14',
+  '#75ff55',
+  '#b8ffa7',
+]
+
+function drawAsciiPortrait(
+  ctx: CanvasRenderingContext2D,
+  video: HTMLVideoElement,
+  width: number,
+  height: number,
+  sample: HTMLCanvasElement,
+  luminance: Float32Array,
+  wave: WaveState,
+) {
+  const cols = Math.max(1, Math.ceil(width / ASCII_CELL_W))
+  const rows = Math.max(1, Math.ceil(height / ASCII_CELL_H))
+  if (sample.width !== cols || sample.height !== rows) {
+    sample.width = cols
+    sample.height = rows
+  }
+
+  const sampleCtx = sample.getContext('2d', { willReadFrequently: true })
+  if (!sampleCtx) return luminance
+
+  sampleCtx.save()
+  sampleCtx.setTransform(-1, 0, 0, 1, cols, 0)
+  sampleCtx.drawImage(video, 0, 0, cols, rows)
+  sampleCtx.restore()
+
+  const pixels = sampleCtx.getImageData(0, 0, cols, rows).data
+  if (luminance.length !== cols * rows) {
+    luminance = new Float32Array(cols * rows)
+  }
+  computeLuminance(pixels, luminance)
+
+  const full = wave.mode === 'ascii'
+  const cellW = width / cols
+  const cellH = height / rows
+  const rampLength = ASCII_RAMP.length
+
+  ctx.save()
+  if (full) {
+    ctx.globalAlpha = 1
+    ctx.fillStyle = '#000'
+    ctx.fillRect(0, 0, width, height)
+  }
+  ctx.font = `${Math.max(9, Math.round(cellH * 0.9))}px ui-monospace, monospace`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+
+  for (let row = 0; row < rows; row++) {
+    const cy = (row + 0.5) * cellH
+    for (let col = 0; col < cols; col++) {
+      const cx = (col + 0.5) * cellW
+      const coverage = full
+        ? 1
+        : waveCoverage(
+            cx,
+            cy,
+            wave.originX,
+            wave.originY,
+            wave.radius,
+            WAVE_FEATHER,
+          )
+      if (coverage <= 0.01) continue
+
+      if (!full) {
+        ctx.globalAlpha = coverage
+        ctx.fillStyle = '#000'
+        ctx.fillRect(col * cellW, row * cellH, cellW + 0.5, cellH + 0.5)
+      }
+
+      const i = row * cols + col
+      const value = normalizeLuminance(luminance[i])
+      const edge = edgeStrength(luminance, col, row, cols, rows)
+      if (value < 0.035 && edge < 0.08) continue
+
+      const char = ASCII_RAMP[glyphIndex(value, edge, rampLength)]
+      if (char === ' ') continue
+
+      const intensity = clamp01(value + edge * 0.18)
+      const paletteIndex = Math.min(
+        GREEN_PALETTE.length - 1,
+        Math.round(intensity * (GREEN_PALETTE.length - 1)),
+      )
+      ctx.globalAlpha = coverage * (0.48 + 0.52 * Math.max(value, edge * 0.8))
+      ctx.fillStyle = GREEN_PALETTE[paletteIndex]
+      ctx.fillText(char, cx, cy)
+    }
+  }
+
+  ctx.restore()
+  return luminance
 }
 
 // density ramp (sparse → dense) — wing cells pick a glyph from this each frame
@@ -233,6 +359,18 @@ function drawBfly(ctx: CanvasRenderingContext2D, b: Bfly, t: number) {
 
 function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps) {
   const { canvasRef, ctxRef, sizeRef } = useCanvas2D()
+  const sampleRef = useRef(document.createElement('canvas'))
+  const luminanceRef = useRef<Float32Array<ArrayBufferLike>>(
+    new Float32Array(0),
+  )
+  const waveRef = useRef<WaveState>({
+    mode: 'photo',
+    originX: 0,
+    originY: 0,
+    startedAt: 0,
+    startRadius: 0,
+    radius: 0,
+  })
   const landmarkerRef = useRef<HandLandmarker | null>(null)
   const lastDetect = useRef(0)
   const indexTips = useRef<{ x: number; y: number }[]>([])
@@ -241,8 +379,8 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
   const nextBell = useRef(0)
   const nextSparkle = useRef(0)
   const wasPerched = useRef(false)
+  const transitionPerched = useRef(false)
   const prevFlap = useRef(0)
-
 
   useEffect(() => {
     let alive = true
@@ -394,6 +532,45 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
       b.y += Math.sin(b.wingPhase) * 1.4 * b.flapAmp
     }
 
+    // Landing releases the ASCII field from the fingertip. Losing the finger
+    // collapses from the current radius, so a brief early takeoff never jumps.
+    const wave = waveRef.current
+    if (b.perched && !transitionPerched.current) {
+      wave.mode = 'revealing'
+      wave.originX = b.x
+      wave.originY = b.y
+      wave.startedAt = now
+      wave.startRadius = wave.radius
+    } else if (!b.perched && transitionPerched.current) {
+      wave.mode = 'hiding'
+      wave.startedAt = now
+      wave.startRadius = wave.radius
+    }
+    transitionPerched.current = b.perched
+
+    const maxRadius = maxCornerDistance(
+      wave.originX,
+      wave.originY,
+      width,
+      height,
+    )
+    if (wave.mode === 'revealing' || wave.mode === 'hiding') {
+      const elapsed = now - wave.startedAt
+      wave.radius = transitionRadius(
+        wave.mode,
+        elapsed,
+        WAVE_DURATION,
+        maxRadius,
+        wave.startRadius,
+      )
+      if (elapsed >= WAVE_DURATION) {
+        wave.mode = wave.mode === 'revealing' ? 'ascii' : 'photo'
+        wave.radius = wave.mode === 'ascii' ? maxRadius : 0
+      }
+    } else if (wave.mode === 'ascii') {
+      wave.radius = maxRadius
+    }
+
     // Orientation: face the direction of travel, bank into turns
     const mdx = b.x - prevX
     const mdy = b.y - prevY
@@ -415,6 +592,17 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
     // Draw — full-brightness webcam (no darkening)
     if (video.readyState >= 2 && video.videoWidth > 0) {
       drawDimWebcam(ctx, video, width, height, 1)
+      if (wave.mode !== 'photo') {
+        luminanceRef.current = drawAsciiPortrait(
+          ctx,
+          video,
+          width,
+          height,
+          sampleRef.current,
+          luminanceRef.current,
+          wave,
+        )
+      }
     } else {
       ctx.fillStyle = '#07080a'
       ctx.fillRect(0, 0, width, height)
