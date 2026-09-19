@@ -5,6 +5,7 @@ import {
   glyphIndex,
   maxCornerDistance,
   normalizeLuminance,
+  personOpacity,
   transitionRadius,
   waveCoverage,
 } from './asciiPortrait'
@@ -42,6 +43,12 @@ describe('ASCII portrait processing', () => {
 
   it('edge detail raises the selected glyph density', () => {
     expect(glyphIndex(0.25, 1, 10)).toBeGreaterThan(glyphIndex(0.25, 0, 10))
+  })
+
+  it('softens the person-mask boundary without leaking background', () => {
+    expect(personOpacity(0.1)).toBe(0)
+    expect(personOpacity(0.45)).toBeCloseTo(0.5)
+    expect(personOpacity(0.8)).toBe(1)
   })
 
   it('feathers the radial wave edge', () => {

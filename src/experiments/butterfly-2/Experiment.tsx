@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react'
-import type { HandLandmarker } from '@mediapipe/tasks-vision'
+import type { HandLandmarker, ImageSegmenter } from '@mediapipe/tasks-vision'
 import type { ExperimentProps } from '@/shared/types'
 import { useCanvas2D } from '@/shared/hooks/useCanvas2D'
 import { useAnimationLoop } from '@/shared/hooks/useAnimationLoop'
 import { WebcamGate } from '@/shared/components/WebcamGate'
-import { createHandLandmarker } from '@/shared/lib/mediapipe'
+import {
+  createHandLandmarker,
+  createImageSegmenter,
+} from '@/shared/lib/mediapipe'
 import { GLASS_SCALE } from '@/shared/lib/glassAudio'
 import { useGlassAudio } from '@/shared/hooks/useGlassAudio'
 import { SoundToggle } from '@/shared/components/SoundToggle'
@@ -18,6 +21,7 @@ import {
   glyphIndex,
   maxCornerDistance,
   normalizeLuminance,
+  personOpacity,
   transitionRadius,
   waveCoverage,
 } from './asciiPortrait'
@@ -52,6 +56,12 @@ interface WaveState {
   radius: number
 }
 
+interface PersonMask {
+  data: Float32Array<ArrayBufferLike> | null
+  width: number
+  height: number
+}
+
 const GREEN_PALETTE = [
   '#0a3c0d',
   '#0c6410',
@@ -71,6 +81,7 @@ function drawAsciiPortrait(
   sample: HTMLCanvasElement,
   luminance: Float32Array,
   wave: WaveState,
+  mask: PersonMask,
 ) {
   const cols = Math.max(1, Math.ceil(width / ASCII_CELL_W))
   const rows = Math.max(1, Math.ceil(height / ASCII_CELL_H))
@@ -110,6 +121,10 @@ function drawAsciiPortrait(
 
   for (let row = 0; row < rows; row++) {
     const cy = (row + 0.5) * cellH
+    const maskY = Math.min(
+      mask.height - 1,
+      Math.floor(((row + 0.5) / rows) * mask.height),
+    )
     for (let col = 0; col < cols; col++) {
       const cx = (col + 0.5) * cellW
       const coverage = full
@@ -130,20 +145,32 @@ function drawAsciiPortrait(
         ctx.fillRect(col * cellW, row * cellH, cellW + 0.5, cellH + 0.5)
       }
 
+      if (!mask.data || mask.width <= 0 || mask.height <= 0) continue
+      const maskX = Math.min(
+        mask.width - 1,
+        Math.floor((1 - (col + 0.5) / cols) * mask.width),
+      )
+      const person = personOpacity(mask.data[maskY * mask.width + maskX])
+      if (person <= 0.01) continue
+
       const i = row * cols + col
       const value = normalizeLuminance(luminance[i])
       const edge = edgeStrength(luminance, col, row, cols, rows)
-      if (value < 0.035 && edge < 0.08) continue
+      const portraitValue = clamp01(value * 0.9 + person * 0.1)
+      if (portraitValue < 0.035 && edge < 0.08) continue
 
-      const char = ASCII_RAMP[glyphIndex(value, edge, rampLength)]
+      const char = ASCII_RAMP[glyphIndex(portraitValue, edge, rampLength)]
       if (char === ' ') continue
 
-      const intensity = clamp01(value + edge * 0.18)
+      const intensity = clamp01(portraitValue + edge * 0.18)
       const paletteIndex = Math.min(
         GREEN_PALETTE.length - 1,
         Math.round(intensity * (GREEN_PALETTE.length - 1)),
       )
-      ctx.globalAlpha = coverage * (0.48 + 0.52 * Math.max(value, edge * 0.8))
+      ctx.globalAlpha =
+        coverage *
+        person *
+        (0.48 + 0.52 * Math.max(portraitValue, edge * 0.8))
       ctx.fillStyle = GREEN_PALETTE[paletteIndex]
       ctx.fillText(char, cx, cy)
     }
@@ -372,7 +399,14 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
     radius: 0,
   })
   const landmarkerRef = useRef<HandLandmarker | null>(null)
+  const segmenterRef = useRef<ImageSegmenter | null>(null)
+  const personMaskRef = useRef<PersonMask>({
+    data: null,
+    width: 0,
+    height: 0,
+  })
   const lastDetect = useRef(0)
+  const lastSegment = useRef(0)
   const indexTips = useRef<{ x: number; y: number }[]>([])
   const bflyRef = useRef<Bfly | null>(null)
   const { audioRef, muted, toggleMuted } = useGlassAudio(paused)
@@ -392,6 +426,20 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
       alive = false
       landmarkerRef.current?.close()
       landmarkerRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    let alive = true
+    void createImageSegmenter().then((segmenter) => {
+      if (alive) segmenterRef.current = segmenter
+      else segmenter.close()
+    })
+    return () => {
+      alive = false
+      segmenterRef.current?.close()
+      segmenterRef.current = null
+      personMaskRef.current.data = null
     }
   }, [])
 
@@ -422,6 +470,32 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
         const t = hand[INDEX_TIP]
         // mirror x to match the mirrored (-scale-x-100) video
         return { x: (1 - t.x) * width, y: t.y * height }
+      })
+    }
+
+    // Keep a warm person mask so the landing wave can reveal the silhouette
+    // immediately. 12.5fps is enough for a soft mask and leaves GPU room for
+    // hand tracking and the 60fps glyph render.
+    const segmenter = segmenterRef.current
+    if (
+      segmenter &&
+      video.readyState >= 2 &&
+      video.videoWidth > 0 &&
+      now - lastSegment.current > 80
+    ) {
+      const ts = now > lastSegment.current ? now : lastSegment.current + 1
+      lastSegment.current = ts
+      segmenter.segmentForVideo(video, ts, (result) => {
+        const confidence = result.confidenceMasks?.[0]
+        if (!confidence) return
+        const source = confidence.getAsFloat32Array()
+        const mask = personMaskRef.current
+        if (!mask.data || mask.data.length !== source.length) {
+          mask.data = new Float32Array(source.length)
+        }
+        mask.data.set(source)
+        mask.width = confidence.width
+        mask.height = confidence.height
       })
     }
 
@@ -601,6 +675,7 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
           sampleRef.current,
           luminanceRef.current,
           wave,
+          personMaskRef.current,
         )
       }
     } else {

@@ -49,6 +49,11 @@ export function glyphIndex(value: number, edge: number, rampLength: number) {
   )
 }
 
+export function personOpacity(confidence: number, low = 0.28, high = 0.62) {
+  const t = clamp01((confidence - low) / Math.max(0.001, high - low))
+  return t * t * (3 - 2 * t)
+}
+
 export function waveCoverage(
   x: number,
   y: number,
