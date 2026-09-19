@@ -93,6 +93,7 @@ yours to change. Adding a new experiment takes one folder; see
 - **Breath Garden** (`/e/breath-garden`) — hand-gesture dandelion interaction
 - **Constellation** (`/e/constellation`) — fingertips become stars connected by ASCII lines
 - **Butterfly** (`/e/butterfly`) — procedural ASCII butterfly with generative glass audio
+- **Butterfly 2.0** (`/e/butterfly-2`) — a landing butterfly releases a wave that turns you into live green ASCII
 
 ## Project structure
 

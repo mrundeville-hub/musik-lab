@@ -32,3 +32,4 @@ graphify-out
 
 # agent tooling state
 .commandcode/
+.worktrees/

@@ -39,6 +39,11 @@ describe('experiments registry', () => {
     expect(getExperiment('no-such-experiment')).toBeUndefined()
   })
 
+  it('discovers both butterfly generations independently', () => {
+    expect(getExperiment('butterfly')?.metadata.slug).toBe('butterfly')
+    expect(getExperiment('butterfly-2')?.metadata.slug).toBe('butterfly-2')
+  })
+
   it('sorts by year desc then title asc', () => {
     for (let i = 1; i < experiments.length; i++) {
       const prev = experiments[i - 1]!.metadata
