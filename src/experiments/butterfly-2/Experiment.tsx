@@ -418,28 +418,30 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
 
   useEffect(() => {
     let alive = true
-    void createHandLandmarker(2).then((lm) => {
-      if (alive) landmarkerRef.current = lm
-      else lm.close()
-    })
+    const personMask = personMaskRef.current
+    // Load sequentially: shared MediaPipe fileset initialization is cached
+    // after the hand model resolves, avoiding two concurrent WASM bootstraps.
+    void createHandLandmarker(2)
+      .then((landmarker) => {
+        if (!alive) {
+          landmarker.close()
+          return null
+        }
+        landmarkerRef.current = landmarker
+        return createImageSegmenter()
+      })
+      .then((segmenter) => {
+        if (!segmenter) return
+        if (alive) segmenterRef.current = segmenter
+        else segmenter.close()
+      })
     return () => {
       alive = false
       landmarkerRef.current?.close()
       landmarkerRef.current = null
-    }
-  }, [])
-
-  useEffect(() => {
-    let alive = true
-    void createImageSegmenter().then((segmenter) => {
-      if (alive) segmenterRef.current = segmenter
-      else segmenter.close()
-    })
-    return () => {
-      alive = false
       segmenterRef.current?.close()
       segmenterRef.current = null
-      personMaskRef.current.data = null
+      personMask.data = null
     }
   }, [])
 
@@ -721,7 +723,7 @@ function Scene({ video, paused }: { video: HTMLVideoElement } & ExperimentProps)
 
 export default function Butterfly({ paused }: ExperimentProps) {
   return (
-    <WebcamGate hint="index fingers tracked — a butterfly drifts around and perches on your fingertip">
+    <WebcamGate hint="hold up an index finger — the butterfly lands and releases a green ASCII wave">
       {(video) => <Scene video={video} paused={paused} />}
     </WebcamGate>
   )

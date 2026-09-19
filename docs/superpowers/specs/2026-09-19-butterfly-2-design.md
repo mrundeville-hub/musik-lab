@@ -49,19 +49,22 @@ The existing `/e/butterfly` experiment remains available and unchanged.
 
 Render the portrait on the existing Canvas 2D stage. Each frame:
 
-1. Mirror and downsample the webcam into a reusable offscreen canvas where one
+1. Use the existing MediaPipe selfie segmenter to maintain a soft person
+   confidence mask. Only masked cells may emit glyphs, making the person a
+   green object against true black instead of converting the room background.
+2. Mirror and downsample the webcam into a reusable offscreen canvas where one
    source pixel corresponds to one glyph cell.
-2. Compute luminance using Rec. 709 coefficients:
+3. Compute luminance using Rec. 709 coefficients:
    `0.2126 * r + 0.7152 * g + 0.0722 * b`.
-3. Apply black/white-point normalization and a gamma curve so faces, hands, and
+4. Apply black/white-point normalization and a gamma curve so faces, hands, and
    clothing remain legible across normal indoor lighting.
-4. Estimate local edges from neighboring luminance samples using a compact
+5. Estimate local edges from neighboring luminance samples using a compact
    Sobel gradient and add a bounded edge boost. This preserves eyes, lips,
-   fingers, and clothing contours without introducing a second vision model.
-5. Select glyphs from a luminance ramp such as
+   fingers, and clothing contours.
+6. Select glyphs from a luminance ramp such as
    ` .,:;irsXA253hMHGS#9B&@`.
-6. Skip near-black cells so the background remains truly black.
-7. Draw visible glyphs in phosphor green (`#39ff14`) with a restrained darker
+7. Skip near-black cells so dark regions stay sparse.
+8. Draw visible glyphs in phosphor green (`#39ff14`) with a restrained darker
    green shadow. Vary brightness by source luminance rather than using one flat
    green.
 
@@ -94,13 +97,16 @@ Create a self-contained `src/experiments/butterfly-2/` folder:
   a non-saturated density distribution.
 - `asciiPortrait.ts` owns pure luminance, normalization, edge, glyph, and wave
   calculations.
-- `asciiPortrait.test.ts` verifies image-to-glyph and radial-mask behavior.
+- `asciiPortrait.test.ts` verifies image-to-glyph, person-mask opacity, and
+  radial-mask behavior.
 - `Experiment.tsx` owns React lifecycle, MediaPipe tracking, animation state,
   audio, compositing, and drawing.
 
 Use only existing React, Canvas 2D, MediaPipe, and audio utilities. Add no
 dependency and do not modify shared modules unless a concrete duplicated need
 appears during implementation.
+Use the existing `createImageSegmenter()` shared helper and bundled selfie
+segmentation model; no additional model or network dependency is required.
 
 The registry already discovers experiment folders through `import.meta.glob`,
 so no explicit route registration should be necessary.
@@ -129,7 +135,8 @@ active transition.
 - Reuse the offscreen canvas, typed luminance buffer, projection buffer, and
   particle pool.
 - Request the 2D sampling context with `willReadFrequently: true`.
-- Run MediaPipe at its existing throttled cadence, independent of rendering.
+- Run hand tracking at about 30fps and person segmentation at about 12.5fps,
+  independent of the glyph rendering cadence.
 - Process only one pixel per ASCII cell, never full-resolution `getImageData`.
 - Avoid allocations inside the animation loop.
 - Respect `paused` through `useAnimationLoop`.
@@ -144,8 +151,8 @@ performance measurement.
 - If MediaPipe is not ready, the butterfly remains in idle flight.
 - If a video frame is temporarily unavailable, retain a black stage rather
   than reading invalid pixel data.
-- Close the hand landmarker on unmount and leave no animation, media, or audio
-  work running after navigation.
+- Close the hand landmarker and image segmenter on unmount and leave no
+  animation, media, or audio work running after navigation.
 
 ## Verification
 
@@ -169,7 +176,6 @@ Manual:
 ## Out of Scope
 
 - Replacing or removing the original Butterfly experiment.
-- Person segmentation or background removal.
 - WebGL shaders.
 - User controls for glyph ramp, color, or resolution.
 - Additional gestures beyond index-fingertip tracking.

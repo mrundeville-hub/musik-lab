@@ -8,8 +8,8 @@ export default {
   year: 2026,
   status: 'new',
   tags: ['webcam', 'ascii', 'mediapipe', 'gesture'],
-  technologies: ['canvas2d', 'mediapipe hand landmarker'],
+  technologies: ['canvas2d', 'mediapipe hand landmarker', 'mediapipe image segmenter'],
   needsWebcam: true,
   controls: 'hold up an index finger — landing transforms the camera into live ASCII',
-  performanceNotes: 'downsampled ASCII sampling and throttled hand tracking',
+  performanceNotes: 'downsampled ASCII sampling, 30fps hand tracking, 12.5fps person segmentation',
 } satisfies ExperimentMetadata
